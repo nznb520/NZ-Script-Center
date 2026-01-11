@@ -1,0 +1,837 @@
+-- NZ脚本中心 - Lua游戏内注入UI（带欢迎界面）
+-- 适用于游戏内注入，轻量级，兼容性好
+-- 作者：南烛
+-- 版本：1.0
+
+-- 配置
+NZ_CONFIG = {
+    scriptName = "NZ脚本中心",
+    author = "主作者：南烛",
+    version = "1.0",
+    
+    -- UI颜色配置
+    colors = {
+        background = {0.1, 0.1, 0.1, 0.9},
+        welcomeBg = {0.05, 0.05, 0.1, 0.95},
+        welcomeText = {1.0, 0.0, 0.5, 1.0},  -- 彩红色
+        rainbow = { -- 彩虹色序列
+            {1.0, 0.0, 0.0, 1.0},  -- 红
+            {1.0, 0.5, 0.0, 1.0},  -- 橙
+            {1.0, 1.0, 0.0, 1.0},  -- 黄
+            {0.0, 1.0, 0.0, 1.0},  -- 绿
+            {0.0, 0.0, 1.0, 1.0},  -- 蓝
+            {0.5, 0.0, 1.0, 1.0},  -- 紫
+        },
+        title = {1.0, 1.0, 1.0, 1.0},
+        versionColor = {0.5, 0.5, 0.5, 1.0},
+        authorColor = {0.7, 0.7, 0.7, 1.0},
+        typeNavBg = {0.2, 0.2, 0.4, 0.8},
+        funcNavBg = {0.4, 0.2, 0.2, 0.8},
+        navItem = {0.3, 0.3, 0.5, 0.8},
+        navItemActive = {0.4, 0.4, 0.7, 1.0},
+        minimizeBtn = {0.8, 0.2, 0.2, 1.0},
+        minimizedBtn = {0.2, 0.7, 0.9, 1.0},
+        skipBtn = {0.3, 0.3, 0.3, 0.8},
+        skipBtnText = {1.0, 1.0, 1.0, 1.0}
+    },
+    
+    -- UI尺寸配置
+    size = {
+        mainWidth = 700,
+        mainHeight = 500,
+        navWidth = 180,
+        cornerRadius = 15,
+        titleFontSize = 28,
+        authorFontSize = 18,
+        navFontSize = 16,
+        borderWidth = 4,
+        welcomeTextSize = 32
+    },
+    
+    -- 欢迎界面配置
+    welcome = {
+        duration = 3.0,  -- 欢迎界面显示时间（秒）
+        imageUrl = "rbxassetid://105529853851343",  -- Roblox图片资源
+        imageWidth = 200,
+        imageHeight = 200,
+        showSkipButton = true
+    },
+    
+    -- 导航项
+    typeNavItems = {
+        "战斗辅助", "资源采集", "任务自动化", 
+        "界面美化", "系统工具", "安全防护"
+    },
+    
+    funcNavItems = {
+        "开始运行", "配置设置", "日志查看", 
+        "帮助文档", "关于脚本", "退出脚本"
+    }
+}
+
+-- UI状态
+NZ_UI = {
+    isWelcome = true,     -- 是否显示欢迎界面
+    isMinimized = false,
+    isDragging = false,
+    dragOffsetX = 0,
+    dragOffsetY = 0,
+    lastClickTime = 0,
+    doubleClickThreshold = 0.3,  -- 双击阈值（秒）
+    rainbowIndex = 1,
+    rainbowTimer = 0,
+    welcomeTimer = 0,     -- 欢迎界面计时器
+    selectedType = 1,
+    selectedFunc = 1,
+    
+    -- 主UI位置
+    mainX = 50,
+    mainY = 50,
+    
+    -- 缩小按钮位置
+    btnX = 700,
+    btnY = 20,
+    btnSize = 40,
+    
+    -- 欢迎界面位置
+    welcomeX = 0,
+    welcomeY = 0,
+    welcomeWidth = 800,
+    welcomeHeight = 600,
+    
+    -- 触摸状态
+    touchX = 0,
+    touchY = 0,
+    isTouching = false
+}
+
+-- 图片资源管理
+NZ_IMAGES = {
+    welcomeImage = nil,
+    isImageLoaded = false
+}
+
+-- 圆角矩形绘制函数
+function DrawRoundedRect(x, y, w, h, r, color)
+    local c = color or {1, 1, 1, 1}
+    
+    -- 设置颜色
+    if draw_set_color then
+        draw_set_color(c[1], c[2], c[3], c[4] or 1)
+    end
+    
+    -- 绘制圆角矩形（根据实际图形API调整）
+    if draw_rounded_rect then
+        draw_rounded_rect(x, y, w, h, r)
+    else
+        -- 如果API不支持圆角，绘制普通矩形
+        if draw_rect then
+            draw_rect(x, y, x + w, y + h)
+        end
+    end
+end
+
+-- 绘制文本
+function DrawText(text, x, y, font, color, align)
+    local c = color or {1, 1, 1, 1}
+    
+    -- 设置颜色
+    if draw_set_color then
+        draw_set_color(c[1], c[2], c[3], c[4] or 1)
+    end
+    
+    -- 设置字体
+    if font and draw_set_font then
+        draw_set_font(font)
+    end
+    
+    -- 绘制文本
+    if draw_text then
+        draw_text(x, y, text)
+    elseif draw_text_ext then
+        draw_text_ext(x, y, text, 0, 0)
+    end
+end
+
+-- 绘制图片
+function DrawImage(image, x, y, width, height)
+    if not image or not draw_image then
+        -- 如果图片未加载或API不支持，绘制一个占位符
+        DrawRoundedRect(x, y, width, height, 10, {0.2, 0.2, 0.4, 1.0})
+        DrawText("NZ", x + width/2 - 20, y + height/2 - 10, "normal", {1, 1, 1, 1})
+        DrawText("图标", x + width/2 - 20, y + height/2 + 10, "small", {0.8, 0.8, 0.8, 1.0})
+    else
+        -- 绘制图片
+        draw_image(image, x, y, width, height)
+    end
+end
+
+-- 绘制彩虹边框
+function DrawRainbowBorder(x, y, w, h, thickness, radius)
+    local colors = NZ_CONFIG.colors.rainbow
+    local segments = 20  -- 边框分段数
+    
+    for i = 1, segments do
+        local colorIdx = ((NZ_UI.rainbowIndex + i - 1) % #colors) + 1
+        local color = colors[colorIdx]
+        local angle = (i - 1) * (360 / segments)
+        
+        -- 计算边框点
+        local points = {}
+        local angleRad = math.rad(angle)
+        local nextAngleRad = math.rad(angle + 360/segments)
+        
+        -- 外圈点
+        local ox1 = x + w/2 + (w/2) * math.cos(angleRad)
+        local oy1 = y + h/2 + (h/2) * math.sin(angleRad)
+        local ox2 = x + w/2 + (w/2) * math.cos(nextAngleRad)
+        local oy2 = y + h/2 + (h/2) * math.sin(nextAngleRad)
+        
+        -- 内圈点
+        local ix1 = x + w/2 + (w/2 - thickness) * math.cos(angleRad)
+        local iy1 = y + h/2 + (h/2 - thickness) * math.sin(angleRad)
+        local ix2 = x + w/2 + (w/2 - thickness) * math.cos(nextAngleRad)
+        local iy2 = y + h/2 + (h/2 - thickness) * math.sin(nextAngleRad)
+        
+        -- 绘制边框段
+        if draw_quad then
+            draw_set_color(color[1], color[2], color[3], color[4])
+            draw_quad(ox1, oy1, ox2, oy2, ix2, iy2, ix1, iy1)
+        end
+    end
+end
+
+-- 绘制欢迎界面
+function DrawWelcomeUI()
+    local cfg = NZ_CONFIG
+    local ui = NZ_UI
+    local w = cfg.welcome
+    
+    -- 获取屏幕尺寸
+    local screenW, screenH = GetScreenSize()
+    local centerX = screenW / 2
+    local centerY = screenH / 2
+    
+    -- 计算欢迎界面位置和大小
+    local welcomeWidth = math.min(600, screenW * 0.8)
+    local welcomeHeight = math.min(500, screenH * 0.8)
+    local welcomeX = centerX - welcomeWidth / 2
+    local welcomeY = centerY - welcomeHeight / 2
+    
+    -- 保存位置供点击检测使用
+    ui.welcomeX = welcomeX
+    ui.welcomeY = welcomeY
+    ui.welcomeWidth = welcomeWidth
+    ui.welcomeHeight = welcomeHeight
+    
+    -- 绘制背景
+    DrawRoundedRect(welcomeX, welcomeY, welcomeWidth, welcomeHeight, 20, cfg.colors.welcomeBg)
+    
+    -- 绘制彩虹边框
+    DrawRainbowBorder(welcomeX, welcomeY, welcomeWidth, welcomeHeight, 6, 20)
+    
+    -- 计算图片位置
+    local imageX = centerX - w.imageWidth / 2
+    local imageY = welcomeY + 40
+    
+    -- 绘制图片
+    DrawImage(NZ_IMAGES.welcomeImage, imageX, imageY, w.imageWidth, w.imageHeight)
+    
+    -- 绘制标题
+    local titleY = imageY + w.imageHeight + 30
+    DrawText("NZ脚本中心", centerX, titleY, "title", cfg.colors.title, "center")
+    
+    -- 绘制版本号
+    local versionY = titleY + 40
+    DrawText("版本 " .. cfg.version, centerX, versionY, "normal", cfg.colors.versionColor, "center")
+    
+    -- 绘制欢迎文字（彩红色）
+    local welcomeY = versionY + 50
+    local welcomeText = "欢迎使用NZ脚本中心"
+    
+    -- 创建彩虹色文字效果
+    local textWidth = 200  -- 估计文本宽度
+    local textX = centerX - textWidth / 2
+    
+    -- 绘制彩虹渐变文本
+    for i = 1, #welcomeText do
+        local char = welcomeText:sub(i, i)
+        local colorIdx = ((ui.rainbowIndex + i - 1) % #cfg.colors.rainbow) + 1
+        local color = cfg.colors.rainbow[colorIdx]
+        
+        -- 覆盖彩红色
+        if i == 1 or i == 2 or i == #welcomeText-1 or i == #welcomeText then
+            color = cfg.colors.welcomeText
+        end
+        
+        local charX = textX + (i-1) * 20
+        DrawText(char, charX, welcomeY, "welcome", color)
+    end
+    
+    -- 绘制加载进度条
+    local progressWidth = welcomeWidth - 100
+    local progressHeight = 20
+    local progressX = centerX - progressWidth / 2
+    local progressY = welcomeY + 60
+    
+    -- 进度条背景
+    DrawRoundedRect(progressX, progressY, progressWidth, progressHeight, 10, {0.2, 0.2, 0.2, 1.0})
+    
+    -- 进度条前景
+    local progress = ui.welcomeTimer / cfg.welcome.duration
+    local fillWidth = progressWidth * math.min(1.0, progress)
+    if fillWidth > 0 then
+        local progressColor = {
+            progress,                    -- R
+            1.0 - progress,              -- G
+            0.5,                         -- B
+            1.0                          -- A
+        }
+        DrawRoundedRect(progressX, progressY, fillWidth, progressHeight, 10, progressColor)
+    end
+    
+    -- 绘制跳过按钮
+    if cfg.welcome.showSkipButton then
+        local skipBtnWidth = 100
+        local skipBtnHeight = 40
+        local skipBtnX = centerX - skipBtnWidth / 2
+        local skipBtnY = progressY + progressHeight + 30
+        
+        -- 保存按钮位置供点击检测
+        ui.skipBtnX = skipBtnX
+        ui.skipBtnY = skipBtnY
+        ui.skipBtnWidth = skipBtnWidth
+        ui.skipBtnHeight = skipBtnHeight
+        
+        -- 绘制跳过按钮
+        DrawRoundedRect(skipBtnX, skipBtnY, skipBtnWidth, skipBtnHeight, 10, cfg.colors.skipBtn)
+        DrawText("跳过", centerX, skipBtnY + 10, "normal", cfg.colors.skipBtnText, "center")
+        
+        -- 显示剩余时间
+        local remaining = math.ceil(cfg.welcome.duration - ui.welcomeTimer)
+        if remaining > 0 then
+            DrawText("(" .. remaining .. "秒后自动进入)", centerX, skipBtnY + skipBtnHeight + 10, "small", {0.7, 0.7, 0.7, 1.0}, "center")
+        end
+    end
+    
+    -- 绘制作者信息
+    local authorY = welcomeY + 150
+    DrawText(cfg.author, centerX, authorY, "normal", cfg.colors.authorColor, "center")
+    
+    -- 绘制提示
+    local hintY = authorY + 30
+    DrawText("按ESC键退出脚本", centerX, hintY, "small", {0.6, 0.6, 0.6, 1.0}, "center")
+end
+
+-- 绘制主UI
+function DrawMainUI()
+    local cfg = NZ_CONFIG
+    local ui = NZ_UI
+    local s = cfg.size
+    
+    -- 绘制主背景
+    DrawRoundedRect(ui.mainX, ui.mainY, s.mainWidth, s.mainHeight, s.cornerRadius, cfg.colors.background)
+    
+    -- 绘制彩虹边框
+    DrawRainbowBorder(ui.mainX, ui.mainY, s.mainWidth, s.mainHeight, s.borderWidth, s.cornerRadius)
+    
+    -- 绘制标题
+    DrawText(cfg.scriptName, ui.mainX + 20, ui.mainY + 20, "title", cfg.colors.title)
+    
+    -- 绘制版本号
+    DrawText("v" .. cfg.version, ui.mainX + s.mainWidth - 100, ui.mainY + 25, "normal", cfg.colors.versionColor)
+    
+    -- 绘制作者
+    DrawText(cfg.author, ui.mainX + 20, ui.mainY + 60, "normal", cfg.colors.authorColor)
+    
+    -- 绘制缩小按钮
+    DrawRoundedRect(ui.mainX + s.mainWidth - 50, ui.mainY + 20, 30, 30, 5, cfg.colors.minimizeBtn)
+    DrawText("-", ui.mainX + s.mainWidth - 45, ui.mainY + 22, "normal", {1, 1, 1, 1})
+    
+    -- 绘制左侧类型导航
+    local navX = ui.mainX + 20
+    local navY = ui.mainY + 100
+    
+    DrawRoundedRect(navX, navY, s.navWidth, 300, s.cornerRadius, cfg.colors.typeNavBg)
+    DrawText("类型导航", navX + 20, navY - 20, "normal", {1, 1, 1, 1})
+    
+    for i, item in ipairs(cfg.typeNavItems) do
+        local itemY = navY + 10 + (i-1) * 45
+        local color = (ui.selectedType == i) and cfg.colors.navItemActive or cfg.colors.navItem
+        
+        DrawRoundedRect(navX + 10, itemY, s.navWidth - 20, 40, 10, color)
+        DrawText(tostring(i) .. ". " .. item, navX + 20, itemY + 10, "normal", {1, 1, 1, 1})
+    end
+    
+    -- 绘制右侧功能导航
+    local funcX = ui.mainX + s.mainWidth - s.navWidth - 20
+    local funcY = navY
+    
+    DrawRoundedRect(funcX, funcY, s.navWidth, 300, s.cornerRadius, cfg.colors.funcNavBg)
+    DrawText("功能导航", funcX + 20, funcY - 20, "normal", {1, 1, 1, 1})
+    
+    for i, item in ipairs(cfg.funcNavItems) do
+        local itemY = funcY + 10 + (i-1) * 45
+        local color = (ui.selectedFunc == i) and cfg.colors.navItemActive or cfg.colors.navItem
+        
+        DrawRoundedRect(funcX + 10, itemY, s.navWidth - 20, 40, 10, color)
+        DrawText(tostring(i) .. ". " .. item, funcX + 20, itemY + 10, "normal", {1, 1, 1, 1})
+    end
+end
+
+-- 绘制缩小按钮
+function DrawMinimizedButton()
+    local ui = NZ_UI
+    local color = cfg.colors.minimizedBtn
+    
+    -- 绘制圆形按钮
+    if draw_circle then
+        draw_set_color(color[1], color[2], color[3], color[4])
+        draw_circle(ui.btnX, ui.btnY, ui.btnSize, false, 32)
+        
+        -- 填充
+        draw_set_color(color[1] * 0.8, color[2] * 0.8, color[3] * 0.8, color[4])
+        draw_circle(ui.btnX, ui.btnY, ui.btnSize - 2, true, 32)
+    else
+        -- 如果API不支持圆形，绘制正方形
+        DrawRoundedRect(ui.btnX - ui.btnSize, ui.btnY - ui.btnSize, 
+                       ui.btnSize * 2, ui.btnSize * 2, ui.btnSize, color)
+    end
+    
+    -- 绘制按钮文字
+    DrawText("NZ", ui.btnX - 10, ui.btnY - 10, "normal", {1, 1, 1, 1})
+end
+
+-- 处理欢迎界面的输入
+function HandleWelcomeInput(x, y, action)
+    local ui = NZ_UI
+    local cfg = NZ_CONFIG
+    
+    if action == "down" then
+        ui.touchX, ui.touchY = x, y
+        ui.isTouching = true
+        
+        -- 检查是否点击了跳过按钮
+        if cfg.welcome.showSkipButton and ui.skipBtnX and ui.skipBtnY then
+            if x >= ui.skipBtnX and x <= ui.skipBtnX + ui.skipBtnWidth and
+               y >= ui.skipBtnY and y <= ui.skipBtnY + ui.skipBtnHeight then
+                ui.isWelcome = false
+                return true
+            end
+        end
+        
+        -- 点击任意位置跳过
+        if x >= ui.welcomeX and x <= ui.welcomeX + ui.welcomeWidth and
+           y >= ui.welcomeY and y <= ui.welcomeY + ui.welcomeHeight then
+            -- 可以设置为点击任意位置跳过
+            -- ui.isWelcome = false
+            -- return true
+        end
+        
+    elseif action == "up" then
+        ui.isTouching = false
+    end
+    
+    return false
+end
+
+-- 处理主界面的输入
+function HandleMainInput(x, y, action)
+    local ui = NZ_UI
+    local cfg = NZ_CONFIG
+    local s = cfg.size
+    local currentTime = os.clock()
+    
+    if action == "down" then
+        ui.touchX, ui.touchY = x, y
+        ui.isTouching = true
+        
+        if ui.isMinimized then
+            -- 检查是否点击了缩小按钮
+            local distance = math.sqrt((x - ui.btnX)^2 + (y - ui.btnY)^2)
+            if distance <= ui.btnSize then
+                -- 双击检测
+                if currentTime - ui.lastClickTime < ui.doubleClickThreshold then
+                    -- 双击：滑动动画
+                    ui.btnX = ui.btnX + 50
+                    ui.btnY = ui.btnY + 50
+                    
+                    -- 限制在屏幕内
+                    local screenW, screenH = GetScreenSize()
+                    ui.btnX = math.max(ui.btnSize, math.min(screenW - ui.btnSize, ui.btnX))
+                    ui.btnY = math.max(ui.btnSize, math.min(screenH - ui.btnSize, ui.btnY))
+                else
+                    -- 单击：开始拖动
+                    ui.isDragging = true
+                    ui.dragOffsetX = x - ui.btnX
+                    ui.dragOffsetY = y - ui.btnY
+                end
+                ui.lastClickTime = currentTime
+                return true
+            end
+        else
+            -- 检查缩小按钮
+            if x >= ui.mainX + s.mainWidth - 50 and x <= ui.mainX + s.mainWidth - 20 and
+               y >= ui.mainY + 20 and y <= ui.mainY + 50 then
+                ui.isMinimized = true
+                return true
+            end
+            
+            -- 检查类型导航项
+            local navX = ui.mainX + 20
+            local navY = ui.mainY + 100
+            
+            for i = 1, #cfg.typeNavItems do
+                local itemY = navY + 10 + (i-1) * 45
+                if x >= navX + 10 and x <= navX + s.navWidth - 10 and
+                   y >= itemY and y <= itemY + 40 then
+                    ui.selectedType = i
+                    OnNavItemSelected("type", i, cfg.typeNavItems[i])
+                    return true
+                end
+            end
+            
+            -- 检查功能导航项
+            local funcX = ui.mainX + s.mainWidth - s.navWidth - 20
+            
+            for i = 1, #cfg.funcNavItems do
+                local itemY = navY + 10 + (i-1) * 45
+                if x >= funcX + 10 and x <= funcX + s.navWidth - 10 and
+                   y >= itemY and y <= itemY + 40 then
+                    ui.selectedFunc = i
+                    OnNavItemSelected("func", i, cfg.funcNavItems[i])
+                    return true
+                end
+            end
+        end
+        
+    elseif action == "move" then
+        ui.touchX, ui.touchY = x, y
+        
+        if ui.isMinimized and ui.isDragging then
+            -- 拖动按钮
+            ui.btnX = x - ui.dragOffsetX
+            ui.btnY = y - ui.dragOffsetY
+            
+            -- 限制在屏幕内
+            local screenW, screenH = GetScreenSize()
+            ui.btnX = math.max(ui.btnSize, math.min(screenW - ui.btnSize, ui.btnX))
+            ui.btnY = math.max(ui.btnSize, math.min(screenH - ui.btnSize, ui.btnY))
+            return true
+        end
+        
+    elseif action == "up" then
+        if ui.isTouching then
+            ui.isTouching = false
+            
+            if ui.isMinimized and ui.isDragging then
+                ui.isDragging = false
+                
+                -- 单击释放时恢复UI
+                if currentTime - ui.lastClickTime >= ui.doubleClickThreshold then
+                    ui.isMinimized = false
+                end
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+-- 处理触摸/点击输入
+function HandleInput(x, y, action)
+    if NZ_UI.isWelcome then
+        return HandleWelcomeInput(x, y, action)
+    else
+        return HandleMainInput(x, y, action)
+    end
+end
+
+-- 导航项选择回调
+function OnNavItemSelected(navType, index, item)
+    print(string.format("选择了%s导航: [%d] %s", 
+          navType == "type" and "类型" or "功能", index, item))
+    
+    -- 这里可以添加实际功能代码
+    if navType == "func" then
+        if index == 1 then
+            StartScript()
+        elseif index == 2 then
+            OpenSettings()
+        elseif index == 3 then
+            ShowLogs()
+        elseif index == 4 then
+            ShowHelp()
+        elseif index == 5 then
+            ShowAbout()
+        elseif index == 6 then
+            ExitScript()
+        end
+    end
+end
+
+-- 脚本功能函数
+function StartScript()
+    print("脚本开始运行...")
+    -- 这里添加启动脚本的代码
+end
+
+function OpenSettings()
+    print("打开设置...")
+    -- 这里添加打开设置的代码
+end
+
+function ShowLogs()
+    print("显示日志...")
+    -- 这里添加显示日志的代码
+end
+
+function ShowHelp()
+    print("显示帮助文档...")
+    -- 这里添加显示帮助的代码
+end
+
+function ShowAbout()
+    print("NZ脚本中心 v1.0")
+    print("主作者：南烛")
+    print("功能：游戏辅助脚本集合")
+end
+
+function ExitScript()
+    print("退出脚本...")
+    -- 这里添加退出脚本的代码
+    NZ_UI.isRunning = false
+end
+
+-- 加载图片资源
+function LoadImageResources()
+    local imageUrl = NZ_CONFIG.welcome.imageUrl
+    
+    -- 尝试加载图片
+    if load_image then
+        NZ_IMAGES.welcomeImage = load_image(imageUrl)
+        if NZ_IMAGES.welcomeImage then
+            NZ_IMAGES.isImageLoaded = true
+            print("成功加载欢迎图片")
+        else
+            print("无法加载图片: " .. imageUrl)
+            print("将使用默认占位符")
+        end
+    else
+        print("当前环境不支持图片加载")
+        print("将使用默认占位符")
+    end
+end
+
+-- 获取屏幕尺寸（需要根据实际游戏API调整）
+function GetScreenSize()
+    -- 这里需要替换为实际的游戏API获取屏幕尺寸
+    -- 示例：返回默认尺寸
+    return 1920, 1080
+end
+
+-- 更新函数（每帧调用）
+function Update(deltaTime)
+    local ui = NZ_UI
+    local cfg = NZ_CONFIG
+    
+    -- 更新彩虹边框颜色
+    ui.rainbowTimer = ui.rainbowTimer + deltaTime
+    if ui.rainbowTimer >= 0.1 then  -- 每0.1秒更新一次
+        ui.rainbowTimer = 0
+        ui.rainbowIndex = (ui.rainbowIndex % #cfg.colors.rainbow) + 1
+    end
+    
+    -- 更新欢迎界面计时器
+    if ui.isWelcome then
+        ui.welcomeTimer = ui.welcomeTimer + deltaTime
+        
+        -- 自动跳过欢迎界面
+        if ui.welcomeTimer >= cfg.welcome.duration then
+            ui.isWelcome = false
+        end
+    end
+    
+    -- 处理键盘快捷键
+    if is_key_pressed then
+        if is_key_pressed("F1") then
+            if not ui.isWelcome then
+                ui.isMinimized = not ui.isMinimized
+            end
+        elseif is_key_pressed("ESC") then
+            ExitScript()
+        elseif is_key_pressed("SPACE") and ui.isWelcome then
+            -- 空格键跳过欢迎界面
+            ui.isWelcome = false
+        end
+    end
+end
+
+-- 绘制函数（每帧调用）
+function Draw()
+    if not NZ_UI.isRunning then
+        return
+    end
+    
+    if NZ_UI.isWelcome then
+        DrawWelcomeUI()
+    else
+        if NZ_UI.isMinimized then
+            DrawMinimizedButton()
+        else
+            DrawMainUI()
+        end
+    end
+end
+
+-- 主循环
+function MainLoop()
+    local lastTime = os.clock()
+    NZ_UI.isRunning = true
+    
+    while NZ_UI.isRunning do
+        local currentTime = os.clock()
+        local deltaTime = currentTime - lastTime
+        lastTime = currentTime
+        
+        -- 更新
+        Update(deltaTime)
+        
+        -- 绘制
+        if begin_draw then
+            begin_draw()
+        end
+        
+        Draw()
+        
+        if end_draw then
+            end_draw()
+        end
+        
+        -- 简单的延迟，避免占用过多CPU
+        local sleepTime = 0.016  -- 约60FPS
+        if os.sleep then
+            os.sleep(sleepTime)
+        end
+    end
+end
+
+-- 初始化函数
+function Initialize()
+    print("NZ脚本中心 v1.0 初始化...")
+    print("主作者：南烛")
+    print("欢迎界面显示中...")
+    print("按F1切换最小化/最大化，ESC退出，空格键跳过欢迎界面")
+    
+    -- 获取屏幕尺寸并居中UI
+    local screenW, screenH = GetScreenSize()
+    NZ_UI.mainX = (screenW - NZ_CONFIG.size.mainWidth) / 2
+    NZ_UI.mainY = (screenH - NZ_CONFIG.size.mainHeight) / 2
+    NZ_UI.btnX = screenW - 100
+    NZ_UI.btnY = 100
+    
+    -- 加载图片资源
+    LoadImageResources()
+    
+    -- 设置初始选择
+    NZ_UI.selectedType = 1
+    NZ_UI.selectedFunc = 1
+    
+    -- 重置欢迎界面计时器
+    NZ_UI.welcomeTimer = 0
+    NZ_UI.isWelcome = true
+end
+
+-- 游戏API适配层
+-- 注：以下函数需要根据实际游戏环境提供的API进行替换
+
+-- 假设的游戏绘图API函数（需要根据实际情况实现）
+function draw_set_color(r, g, b, a)
+    -- 设置绘图颜色
+    -- 实际游戏中可能有类似的API，如：SetDrawColor(r, g, b, a)
+end
+
+function draw_rect(x1, y1, x2, y2)
+    -- 绘制矩形
+    -- 实际游戏中可能有类似的API
+end
+
+function draw_circle(x, y, radius, filled, segments)
+    -- 绘制圆形
+    -- 实际游戏中可能有类似的API
+end
+
+function draw_text(x, y, text)
+    -- 绘制文本
+    -- 实际游戏中可能有类似的API
+end
+
+function draw_quad(x1, y1, x2, y2, x3, y3, x4, y4)
+    -- 绘制四边形
+    -- 实际游戏中可能有类似的API
+end
+
+function draw_set_font(fontName)
+    -- 设置字体
+    -- 实际游戏中可能有类似的API
+end
+
+function draw_image(image, x, y, width, height)
+    -- 绘制图片
+    -- 实际游戏中可能有类似的API
+end
+
+function load_image(url)
+    -- 加载图片
+    -- 实际游戏中可能有类似的API
+    -- 这里返回nil，实际使用时需要根据游戏环境实现
+    return nil
+end
+
+function is_key_pressed(key)
+    -- 检查按键是否按下
+    -- 实际游戏中可能有类似的API
+    return false
+end
+
+function begin_draw()
+    -- 开始绘制
+    -- 实际游戏中可能需要调用
+end
+
+function end_draw()
+    -- 结束绘制
+    -- 实际游戏中可能需要调用
+end
+
+-- 触摸/鼠标输入处理（需要由游戏调用）
+function OnTouchEvent(x, y, action)
+    -- 游戏应该在有触摸/鼠标事件时调用此函数
+    -- action: "down", "move", "up"
+    return HandleInput(x, y, action)
+end
+
+-- 主入口点
+function Main()
+    Initialize()
+    
+    -- 启动主循环
+    if RunInGameLoop then
+        -- 如果游戏有自己的主循环，只注册回调
+        RegisterUpdateCallback(Update)
+        RegisterDrawCallback(Draw)
+    else
+        -- 否则启动自己的主循环
+        MainLoop()
+    end
+    
+    return 0
+end
+
+-- 自动运行
+local status, err = pcall(Main)
+if not status then
+    print("脚本运行错误: " .. tostring(err))
+end
+  
