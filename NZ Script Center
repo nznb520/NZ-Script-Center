@@ -1,837 +1,1030 @@
--- NZ脚本中心 - Lua游戏内注入UI（带欢迎界面）
--- 适用于游戏内注入，轻量级，兼容性好
--- 作者：南烛
--- 版本：1.0
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local UIStroke = Instance.new("UIStroke")
+local Header = Instance.new("Frame")
+local UICorner_Header = Instance.new("UICorner")
+local Title = Instance.new("TextLabel")
+local VersionLabel = Instance.new("TextLabel")
+local Author = Instance.new("TextLabel")
+local MinimizeButton = Instance.new("TextButton")
 
--- 配置
-NZ_CONFIG = {
-    scriptName = "NZ脚本中心",
-    author = "主作者：南烛",
-    version = "1.0",
+-- 导航栏相关
+local NavigationFrame = Instance.new("Frame")
+local NavigationCorner = Instance.new("UICorner")
+local NavigationStroke = Instance.new("UIStroke")
+local ScriptInfoButton = Instance.new("TextButton")
+local DeveloperButton = Instance.new("TextButton")
+local GeneralButton = Instance.new("TextButton")
+local FEButton = Instance.new("TextButton")
+local ESPButton = Instance.new("TextButton")
+local BlindFireButton = Instance.new("TextButton")
+
+-- 脚本容器相关
+local ScriptsContainer = Instance.new("ScrollingFrame")
+local ContainerCorner = Instance.new("UICorner")
+local ContainerStroke = Instance.new("UIStroke")
+local UIListLayout = Instance.new("UIListLayout")
+local UIPadding = Instance.new("UIPadding")
+
+-- 最小化状态相关
+local MinimizedPanel = Instance.new("Frame")
+local PanelUICorner = Instance.new("UICorner")
+local PanelUIStroke = Instance.new("UIStroke")
+local PanelTitle = Instance.new("TextLabel")
+local PanelTitleStroke = Instance.new("UIStroke")
+
+-- 球形展开按钮相关
+local ExpandSphere = Instance.new("Frame")
+local SphereCorner = Instance.new("UICorner")
+local SphereStroke = Instance.new("UIStroke")
+local SphereButton = Instance.new("TextButton")
+local SphereText = Instance.new("TextLabel")
+local SphereTextStroke = Instance.new("UIStroke")
+
+-- 状态变量
+local isMinimized = false
+local originalSize = UDim2.new(0, 400, 0, 380)
+local originalPosition = UDim2.new(0.4, 0, 0.35, 0)
+local panelSize = UDim2.new(0, 250, 0, 60)
+local currentCategory = "ScriptInfo"
+
+-- 功能开关状态
+local infiniteJumpEnabled = false
+local fogRemoverEnabled = false
+local nightVisionEnabled = false
+local mapWallhackEnabled = false
+local highlightEnemyEnabled = false
+local teamCheckEnabled = false
+local showHitboxEnabled = false
+local antiHitEnabled = false
+local enemyHitboxEnabled = false
+
+-- 彩虹颜色序列
+local colorSequence = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+    ColorSequenceKeypoint.new(0.166, Color3.fromRGB(255, 165, 0)),
+    ColorSequenceKeypoint.new(0.333, Color3.fromRGB(255, 255, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+    ColorSequenceKeypoint.new(0.666, Color3.fromRGB(0, 0, 255)),
+    ColorSequenceKeypoint.new(0.833, Color3.fromRGB(75, 0, 130)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(238, 130, 238))
+})
+
+ScreenGui.Name = "NZScriptCenter"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- 主框架
+Frame.Name = "Frame"
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+Frame.Position = originalPosition
+Frame.Size = originalSize
+Frame.Active = true
+Frame.Draggable = true
+Frame.Visible = true
+
+-- 圆角设计
+UICorner.Parent = Frame
+UICorner.CornerRadius = UDim.new(0, 12)
+
+-- 彩虹轮廓
+UIStroke.Parent = Frame
+UIStroke.Color = Color3.fromRGB(255, 0, 0)
+UIStroke.Thickness = 2.5
+UIStroke.LineJoinMode = Enum.LineJoinMode.Round
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- 彩虹颜色动画
+spawn(function()
+    while true do
+        for i = 1, #colorSequence.Keypoints do
+            local nextIndex = i % #colorSequence.Keypoints + 1
+            local tweenInfo = TweenInfo.new(
+                0.5,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            )
+            local tween = game:GetService("TweenService"):Create(
+                UIStroke,
+                tweenInfo,
+                {Color = colorSequence.Keypoints[nextIndex].Value}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+    end
+end)
+
+-- 顶部标题栏
+Header.Name = "Header"
+Header.Parent = Frame
+Header.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.Position = UDim2.new(0, 0, 0, 0)
+
+-- 标题栏圆角
+UICorner_Header.Parent = Header
+UICorner_Header.CornerRadius = UDim.new(0, 12)
+
+-- 脚本标题
+Title.Name = "Title"
+Title.Parent = Header
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0.05, 0, 0.15, 0)
+Title.Size = UDim2.new(0.5, 0, 0, 25)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "NZ Script Center"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 版本号标签
+VersionLabel.Name = "VersionLabel"
+VersionLabel.Parent = Header
+VersionLabel.BackgroundTransparency = 1
+VersionLabel.Position = UDim2.new(0.4, 0, 0.15, 0)
+VersionLabel.Size = UDim2.new(0.2, 0, 0, 25)
+VersionLabel.Font = Enum.Font.GothamBold
+VersionLabel.Text = "V1.0"
+VersionLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+VersionLabel.TextScaled = true
+VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 作者信息
+Author.Name = "Author"
+Author.Parent = Header
+Author.BackgroundTransparency = 1
+Author.Position = UDim2.new(0.05, 0, 0.55, 0)
+Author.Size = UDim2.new(0.7, 0, 0, 18)
+Author.Font = Enum.Font.Gotham
+Author.Text = "作者: 南烛"
+Author.TextColor3 = Color3.fromRGB(200, 200, 200)
+Author.TextScaled = true
+Author.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 最小化按钮
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Parent = Header
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+MinimizeButton.Position = UDim2.new(0.85, 0, 0.2, 0)
+MinimizeButton.Size = UDim2.new(0.1, 0, 0, 30)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.TextSize = 20
+
+-- 最小化按钮圆角
+local MinimizeButtonCorner = Instance.new("UICorner")
+MinimizeButtonCorner.Parent = MinimizeButton
+MinimizeButtonCorner.CornerRadius = UDim.new(0, 6)
+
+-- 最小化按钮描边
+local MinimizeButtonStroke = Instance.new("UIStroke")
+MinimizeButtonStroke.Parent = MinimizeButton
+MinimizeButtonStroke.Color = Color3.fromRGB(80, 80, 80)
+MinimizeButtonStroke.Thickness = 1.5
+
+-- 创建左侧导航栏
+NavigationFrame.Name = "NavigationFrame"
+NavigationFrame.Parent = Frame
+NavigationFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+NavigationFrame.Position = UDim2.new(0, 10, 0, 70)
+NavigationFrame.Size = UDim2.new(0, 80, 0, 250)
+
+-- 导航栏圆角
+NavigationCorner.Parent = NavigationFrame
+NavigationCorner.CornerRadius = UDim.new(0, 8)
+
+-- 导航栏描边
+NavigationStroke.Parent = NavigationFrame
+NavigationStroke.Color = Color3.fromRGB(60, 60, 60)
+NavigationStroke.Thickness = 2
+
+-- 创建导航按钮函数
+local function createNavButton(name, text, positionY)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Parent = NavigationFrame
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Position = UDim2.new(0.1, 0, positionY, 0)
+    button.Size = UDim2.new(0.8, 0, 0, 35)
+    button.Font = Enum.Font.Gotham
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 12
+    button.TextWrapped = true
     
-    -- UI颜色配置
-    colors = {
-        background = {0.1, 0.1, 0.1, 0.9},
-        welcomeBg = {0.05, 0.05, 0.1, 0.95},
-        welcomeText = {1.0, 0.0, 0.5, 1.0},  -- 彩红色
-        rainbow = { -- 彩虹色序列
-            {1.0, 0.0, 0.0, 1.0},  -- 红
-            {1.0, 0.5, 0.0, 1.0},  -- 橙
-            {1.0, 1.0, 0.0, 1.0},  -- 黄
-            {0.0, 1.0, 0.0, 1.0},  -- 绿
-            {0.0, 0.0, 1.0, 1.0},  -- 蓝
-            {0.5, 0.0, 1.0, 1.0},  -- 紫
-        },
-        title = {1.0, 1.0, 1.0, 1.0},
-        versionColor = {0.5, 0.5, 0.5, 1.0},
-        authorColor = {0.7, 0.7, 0.7, 1.0},
-        typeNavBg = {0.2, 0.2, 0.4, 0.8},
-        funcNavBg = {0.4, 0.2, 0.2, 0.8},
-        navItem = {0.3, 0.3, 0.5, 0.8},
-        navItemActive = {0.4, 0.4, 0.7, 1.0},
-        minimizeBtn = {0.8, 0.2, 0.2, 1.0},
-        minimizedBtn = {0.2, 0.7, 0.9, 1.0},
-        skipBtn = {0.3, 0.3, 0.3, 0.8},
-        skipBtnText = {1.0, 1.0, 1.0, 1.0}
-    },
+    local corner = Instance.new("UICorner")
+    corner.Parent = button
+    corner.CornerRadius = UDim.new(0, 6)
     
-    -- UI尺寸配置
-    size = {
-        mainWidth = 700,
-        mainHeight = 500,
-        navWidth = 180,
-        cornerRadius = 15,
-        titleFontSize = 28,
-        authorFontSize = 18,
-        navFontSize = 16,
-        borderWidth = 4,
-        welcomeTextSize = 32
-    },
+    local stroke = Instance.new("UIStroke")
+    stroke.Parent = button
+    stroke.Color = Color3.fromRGB(80, 80, 80)
+    stroke.Thickness = 1.5
     
-    -- 欢迎界面配置
-    welcome = {
-        duration = 3.0,  -- 欢迎界面显示时间（秒）
-        imageUrl = "rbxassetid://105529853851343",  -- Roblox图片资源
-        imageWidth = 200,
-        imageHeight = 200,
-        showSkipButton = true
-    },
+    return button
+end
+
+-- 创建导航按钮
+ScriptInfoButton = createNavButton("ScriptInfoButton", "脚本信息", 0.03)
+DeveloperButton = createNavButton("DeveloperButton", "开发人员", 0.18)
+GeneralButton = createNavButton("GeneralButton", "通用", 0.33)
+FEButton = createNavButton("FEButton", "FE", 0.48)
+ESPButton = createNavButton("ESPButton", "ESP", 0.63)
+BlindFireButton = createNavButton("BlindFireButton", "盲射", 0.78)
+
+-- 创建右侧脚本容器
+ScriptsContainer.Name = "ScriptsContainer"
+ScriptsContainer.Parent = Frame
+ScriptsContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+ScriptsContainer.Position = UDim2.new(0, 100, 0, 70)
+ScriptsContainer.Size = UDim2.new(0, 280, 0, 250)
+ScriptsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScriptsContainer.ScrollBarThickness = 8
+ScriptsContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+
+-- 容器圆角
+ContainerCorner.Parent = ScriptsContainer
+ContainerCorner.CornerRadius = UDim.new(0, 8)
+
+-- 容器描边
+ContainerStroke.Parent = ScriptsContainer
+ContainerStroke.Color = Color3.fromRGB(60, 60, 60)
+ContainerStroke.Thickness = 2
+
+-- 布局和间距
+UIListLayout.Parent = ScriptsContainer
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 8)
+
+UIPadding.Parent = ScriptsContainer
+UIPadding.PaddingTop = UDim.new(0, 10)
+UIPadding.PaddingLeft = UDim.new(0, 10)
+UIPadding.PaddingRight = UDim.new(0, 10)
+
+-- 创建彩色文本标签函数
+local function createColorTextLabel(text, sizeY)
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, -20, 0, sizeY)
+    label.Font = Enum.Font.Gotham
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.TextWrapped = true
+    label.LayoutOrder = #ScriptsContainer:GetChildren()
+    label.TextYAlignment = Enum.TextYAlignment.Top
     
-    -- 导航项
-    typeNavItems = {
-        "战斗辅助", "资源采集", "任务自动化", 
-        "界面美化", "系统工具", "安全防护"
-    },
+    local textStroke = Instance.new("UIStroke")
+    textStroke.Parent = label
+    textStroke.Color = Color3.fromRGB(255, 0, 0)
+    textStroke.Thickness = 1.5
+    textStroke.LineJoinMode = Enum.LineJoinMode.Round
     
-    funcNavItems = {
-        "开始运行", "配置设置", "日志查看", 
-        "帮助文档", "关于脚本", "退出脚本"
+    -- 彩虹动画
+    spawn(function()
+        while label.Parent do
+            for i = 1, #colorSequence.Keypoints do
+                local nextIndex = i % #colorSequence.Keypoints + 1
+                local tweenInfo = TweenInfo.new(
+                    0.5,
+                    Enum.EasingStyle.Linear,
+                    Enum.EasingDirection.InOut
+                )
+                local tween = game:GetService("TweenService"):Create(
+                    textStroke,
+                    tweenInfo,
+                    {Color = colorSequence.Keypoints[nextIndex].Value}
+                )
+                tween:Play()
+                tween.Completed:Wait()
+            end
+        end
+    end)
+    
+    return label
+end
+
+-- 创建开关按钮函数
+local function createToggleButton(name, state)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.BackgroundColor3 = state and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
+    button.Size = UDim2.new(0, 60, 0, 25)
+    button.Font = Enum.Font.Gotham
+    button.Text = state and "开启" or "关闭"
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 12
+    button.LayoutOrder = #ScriptsContainer:GetChildren()
+    
+    local corner = Instance.new("UICorner")
+    corner.Parent = button
+    corner.CornerRadius = UDim.new(0, 6)
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Parent = button
+    stroke.Color = Color3.fromRGB(80, 80, 80)
+    stroke.Thickness = 1.5
+    
+    return button
+end
+
+-- 创建功能行函数
+local function createFeatureRow(name, hasToggle, toggleState, callback)
+    local frame = Instance.new("Frame")
+    frame.BackgroundTransparency = 1
+    frame.Size = UDim2.new(1, -20, 0, 40)
+    frame.LayoutOrder = #ScriptsContainer:GetChildren()
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Parent = frame
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Position = UDim2.new(0, 0, 0, 0)
+    nameLabel.Size = hasToggle and UDim2.new(0.7, 0, 1, 0) or UDim2.new(1, 0, 1, 0)
+    nameLabel.Font = Enum.Font.Gotham
+    nameLabel.Text = name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextSize = 14
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    if hasToggle then
+        local toggleButton = createToggleButton(name .. "Toggle", toggleState)
+        toggleButton.Parent = frame
+        toggleButton.Position = UDim2.new(0.75, 0, 0.25, 0)
+        
+        toggleButton.MouseButton1Click:Connect(function()
+            local newState = not toggleState
+            toggleState = newState
+            toggleButton.BackgroundColor3 = newState and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
+            toggleButton.Text = newState and "开启" or "关闭"
+            
+            if callback then
+                callback(newState)
+            end
+        end)
+    else
+        frame.MouseButton1Click:Connect(function()
+            if callback then
+                callback()
+            end
+        end)
+    end
+    
+    return frame, toggleState
+end
+
+-- 无限跳功能
+local function toggleInfiniteJump(state)
+    infiniteJumpEnabled = state
+    if state then
+        local player = game:GetService("Players").LocalPlayer
+        local connection
+        connection = game:GetService("UserInputService").JumpRequest:Connect(function()
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid:ChangeState("Jumping")
+            end
+        end)
+        -- 存储连接以便关闭
+        toggleInfiniteJump.connection = connection
+    else
+        if toggleInfiniteJump.connection then
+            toggleInfiniteJump.connection:Disconnect()
+            toggleInfiniteJump.connection = nil
+        end
+    end
+end
+
+-- 一键去雾功能
+local function toggleFogRemover(state)
+    fogRemoverEnabled = state
+    if state then
+        if game:GetService("Lighting"):FindFirstChild("FogStart") then
+            game:GetService("Lighting").FogStart = 1000000
+        end
+        if game:GetService("Lighting"):FindFirstChild("FogEnd") then
+            game:GetService("Lighting").FogEnd = 1000000
+        end
+    else
+        if game:GetService("Lighting"):FindFirstChild("FogStart") then
+            game:GetService("Lighting").FogStart = 0
+        end
+        if game:GetService("Lighting"):FindFirstChild("FogEnd") then
+            game:GetService("Lighting").FogEnd = 100000
+        end
+    end
+end
+
+-- 夜视功能
+local function toggleNightVision(state)
+    nightVisionEnabled = state
+    if state then
+        game:GetService("Lighting").Brightness = 2
+        game:GetService("Lighting").Ambient = Color3.fromRGB(255, 255, 255)
+    else
+        game:GetService("Lighting").Brightness = 1
+        game:GetService("Lighting").Ambient = Color3.fromRGB(0.5, 0.5, 0.5)
+    end
+end
+
+-- 地图透视功能
+local function toggleMapWallhack()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not obj:IsA("Terrain") then
+            obj.LocalTransparencyModifier = 0.5
+        end
+    end
+end
+
+-- 无敌少侠飞行功能
+local function executeFlightScript()
+    loadstring(game:HttpGet("https://gist.githubusercontent.com/JungleScripts/775c6366d91d39fe2633c5805a1d0c23/raw/c8de949402393510a27bcf4482c957b6c3bed2c2/gistfile1.txt"))()
+    
+    -- 创建提示框
+    local notification = Instance.new("Frame")
+    notification.Name = "FlightNotification"
+    notification.Parent = ScreenGui
+    notification.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+    notification.Size = UDim2.new(0, 200, 0, 60)
+    notification.Position = UDim2.new(1, -220, 1, -80)
+    notification.ZIndex = 100
+    
+    local notificationCorner = Instance.new("UICorner")
+    notificationCorner.Parent = notification
+    notificationCorner.CornerRadius = UDim.new(0, 8)
+    
+    local notificationStroke = Instance.new("UIStroke")
+    notificationStroke.Parent = notification
+    notificationStroke.Color = Color3.fromRGB(255, 0, 0)
+    notificationStroke.Thickness = 2.5
+    notificationStroke.LineJoinMode = Enum.LineJoinMode.Round
+    
+    -- 彩虹动画
+    spawn(function()
+        while notification.Parent do
+            for i = 1, #colorSequence.Keypoints do
+                local nextIndex = i % #colorSequence.Keypoints + 1
+                local tweenInfo = TweenInfo.new(
+                    0.5,
+                    Enum.EasingStyle.Linear,
+                    Enum.EasingDirection.InOut
+                )
+                local tween = game:GetService("TweenService"):Create(
+                    notificationStroke,
+                    tweenInfo,
+                    {Color = colorSequence.Keypoints[nextIndex].Value}
+                )
+                tween:Play()
+                tween.Completed:Wait()
+            end
+        end
+    end)
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Parent = notification
+    textLabel.BackgroundTransparency = 1
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.Text = "飞行脚本已执行!"
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextSize = 16
+    
+    wait(3)
+    notification:Destroy()
+end
+
+-- 高亮显示敌人功能
+local function toggleHighlightEnemy(state)
+    highlightEnemyEnabled = state
+    -- 这里应该实现高亮敌人的逻辑
+    print("高亮显示敌人: " .. (state and "开启" or "关闭"))
+end
+
+-- 队伍检测功能
+local function toggleTeamCheck(state)
+    teamCheckEnabled = state
+    -- 这里应该实现队伍检测的逻辑
+    print("队伍检测: " .. (state and "开启" or "关闭"))
+end
+
+-- 显示碰撞箱功能
+local function toggleShowHitbox(state)
+    showHitboxEnabled = state
+    -- 这里应该实现显示碰撞箱的逻辑
+    print("显示碰撞箱: " .. (state and "开启" or "关闭"))
+end
+
+-- 防击打功能
+local function toggleAntiHit(state)
+    antiHitEnabled = state
+    if state then
+        local player = game:GetService("Players").LocalPlayer
+        if player.Character then
+            -- 创建碰撞箱在脚下
+            local hitbox = Instance.new("Part")
+            hitbox.Name = "AntiHitHitbox"
+            hitbox.Size = Vector3.new(5, 1, 5)
+            hitbox.Position = player.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
+            hitbox.Transparency = 0.7
+            hitbox.Color = Color3.fromRGB(255, 0, 0)
+            hitbox.Anchored = true
+            hitbox.CanCollide = true
+            hitbox.Parent = workspace
+            
+            -- 跟随玩家
+            spawn(function()
+                while antiHitEnabled and player.Character do
+                    hitbox.Position = player.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
+                    wait()
+                end
+                hitbox:Destroy()
+            end)
+        end
+    else
+        -- 移除碰撞箱
+        local hitbox = workspace:FindFirstChild("AntiHitHitbox")
+        if hitbox then
+            hitbox:Destroy()
+        end
+    end
+end
+
+-- 透视功能
+local function toggleEnemyHitbox(state)
+    enemyHitboxEnabled = state
+    -- 这里应该实现显示敌人碰撞箱的逻辑
+    print("敌人碰撞箱透视: " .. (state and "开启" or "关闭"))
+end
+
+-- 加载指定类型的脚本
+local function loadCategory(category)
+    -- 清除当前内容
+    for _, child in ipairs(ScriptsContainer:GetChildren()) do
+        if child:IsA("TextLabel") or child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    local totalHeight = 10
+    
+    if category == "ScriptInfo" then
+        -- 脚本信息
+        local infoText = createColorTextLabel("本脚本永远公益，请多多宣传\n请进入交流群🐧群号：445825485", 80)
+        infoText.Parent = ScriptsContainer
+        totalHeight = totalHeight + 90
+    elseif category == "Developer" then
+        -- 开发人员
+        local devText = createColorTextLabel("主作者：南烛\n副作者：深拥情话梦一场\n代理：逍遥\n         孙笑川\n           以后", 120)
+        devText.Parent = ScriptsContainer
+        totalHeight = totalHeight + 130
+    elseif category == "General" then
+        -- 通用功能
+        local infiniteJumpRow, infiniteJumpState = createFeatureRow("无限跳", true, infiniteJumpEnabled, toggleInfiniteJump)
+        infiniteJumpRow.Parent = ScriptsContainer
+        infiniteJumpEnabled = infiniteJumpState
+        totalHeight = totalHeight + 50
+        
+        local fogRemoverRow, fogRemoverState = createFeatureRow("一键去雾", true, fogRemoverEnabled, toggleFogRemover)
+        fogRemoverRow.Parent = ScriptsContainer
+        fogRemoverEnabled = fogRemoverState
+        totalHeight = totalHeight + 50
+        
+        local nightVisionRow, nightVisionState = createFeatureRow("夜视", true, nightVisionEnabled, toggleNightVision)
+        nightVisionRow.Parent = ScriptsContainer
+        nightVisionEnabled = nightVisionState
+        totalHeight = totalHeight + 50
+        
+        local mapWallhackRow = createFeatureRow("地图透视", false, false, toggleMapWallhack)
+        mapWallhackRow.Parent = ScriptsContainer
+        totalHeight = totalHeight + 50
+        
+        local flightRow = createFeatureRow("无敌少侠飞行", false, false, executeFlightScript)
+        flightRow.Parent = ScriptsContainer
+        totalHeight = totalHeight + 50
+    elseif category == "FE" then
+        -- FE功能（暂未实现）
+        local feText = createColorTextLabel("FE功能开发中...", 40)
+        feText.Parent = ScriptsContainer
+        totalHeight = totalHeight + 50
+    elseif category == "ESP" then
+        -- ESP功能
+        local highlightEnemyRow, highlightEnemyState = createFeatureRow("高亮显示敌人", true, highlightEnemyEnabled, toggleHighlightEnemy)
+        highlightEnemyRow.Parent = ScriptsContainer
+        highlightEnemyEnabled = highlightEnemyState
+        totalHeight = totalHeight + 50
+        
+        local teamCheckRow, teamCheckState = createFeatureRow("队伍检测", true, teamCheckEnabled, toggleTeamCheck)
+        teamCheckRow.Parent = ScriptsContainer
+        teamCheckEnabled = teamCheckState
+        totalHeight = totalHeight + 50
+        
+        local showHitboxRow, showHitboxState = createFeatureRow("显示碰撞箱", true, showHitboxEnabled, toggleShowHitbox)
+        showHitboxRow.Parent = ScriptsContainer
+        
+        -- 添加小字说明
+        local smallText = Instance.new("TextLabel")
+        smallText.Parent = showHitboxRow
+        smallText.BackgroundTransparency = 1
+        smallText.Position = UDim2.new(0, 0, 0.7, 0)
+        smallText.Size = UDim2.new(1, 0, 0.3, 0)
+        smallText.Font = Enum.Font.Gotham
+        smallText.Text = "盲射专用"
+        smallText.TextColor3 = Color3.fromRGB(150, 150, 150)
+        smallText.TextSize = 10
+        smallText.TextXAlignment = Enum.TextXAlignment.Left
+        
+        showHitboxEnabled = showHitboxState
+        totalHeight = totalHeight + 50
+    elseif category == "BlindFire" then
+        -- 盲射功能
+        local antiHitRow, antiHitState = createFeatureRow("防击打", true, antiHitEnabled, toggleAntiHit)
+        antiHitRow.Parent = ScriptsContainer
+        antiHitEnabled = antiHitState
+        totalHeight = totalHeight + 50
+        
+        local enemyHitboxRow, enemyHitboxState = createFeatureRow("透视", true, enemyHitboxEnabled, toggleEnemyHitbox)
+        enemyHitboxRow.Parent = ScriptsContainer
+        enemyHitboxEnabled = enemyHitboxState
+        totalHeight = totalHeight + 50
+    end
+    
+    -- 更新CanvasSize
+    ScriptsContainer.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+    
+    -- 更新导航按钮状态
+    local buttons = {
+        ScriptInfoButton = "ScriptInfo",
+        DeveloperButton = "Developer",
+        GeneralButton = "General",
+        FEButton = "FE",
+        ESPButton = "ESP",
+        BlindFireButton = "BlindFire"
     }
-}
-
--- UI状态
-NZ_UI = {
-    isWelcome = true,     -- 是否显示欢迎界面
-    isMinimized = false,
-    isDragging = false,
-    dragOffsetX = 0,
-    dragOffsetY = 0,
-    lastClickTime = 0,
-    doubleClickThreshold = 0.3,  -- 双击阈值（秒）
-    rainbowIndex = 1,
-    rainbowTimer = 0,
-    welcomeTimer = 0,     -- 欢迎界面计时器
-    selectedType = 1,
-    selectedFunc = 1,
     
-    -- 主UI位置
-    mainX = 50,
-    mainY = 50,
-    
-    -- 缩小按钮位置
-    btnX = 700,
-    btnY = 20,
-    btnSize = 40,
-    
-    -- 欢迎界面位置
-    welcomeX = 0,
-    welcomeY = 0,
-    welcomeWidth = 800,
-    welcomeHeight = 600,
-    
-    -- 触摸状态
-    touchX = 0,
-    touchY = 0,
-    isTouching = false
-}
-
--- 图片资源管理
-NZ_IMAGES = {
-    welcomeImage = nil,
-    isImageLoaded = false
-}
-
--- 圆角矩形绘制函数
-function DrawRoundedRect(x, y, w, h, r, color)
-    local c = color or {1, 1, 1, 1}
-    
-    -- 设置颜色
-    if draw_set_color then
-        draw_set_color(c[1], c[2], c[3], c[4] or 1)
-    end
-    
-    -- 绘制圆角矩形（根据实际图形API调整）
-    if draw_rounded_rect then
-        draw_rounded_rect(x, y, w, h, r)
-    else
-        -- 如果API不支持圆角，绘制普通矩形
-        if draw_rect then
-            draw_rect(x, y, x + w, y + h)
-        end
-    end
-end
-
--- 绘制文本
-function DrawText(text, x, y, font, color, align)
-    local c = color or {1, 1, 1, 1}
-    
-    -- 设置颜色
-    if draw_set_color then
-        draw_set_color(c[1], c[2], c[3], c[4] or 1)
-    end
-    
-    -- 设置字体
-    if font and draw_set_font then
-        draw_set_font(font)
-    end
-    
-    -- 绘制文本
-    if draw_text then
-        draw_text(x, y, text)
-    elseif draw_text_ext then
-        draw_text_ext(x, y, text, 0, 0)
-    end
-end
-
--- 绘制图片
-function DrawImage(image, x, y, width, height)
-    if not image or not draw_image then
-        -- 如果图片未加载或API不支持，绘制一个占位符
-        DrawRoundedRect(x, y, width, height, 10, {0.2, 0.2, 0.4, 1.0})
-        DrawText("NZ", x + width/2 - 20, y + height/2 - 10, "normal", {1, 1, 1, 1})
-        DrawText("图标", x + width/2 - 20, y + height/2 + 10, "small", {0.8, 0.8, 0.8, 1.0})
-    else
-        -- 绘制图片
-        draw_image(image, x, y, width, height)
-    end
-end
-
--- 绘制彩虹边框
-function DrawRainbowBorder(x, y, w, h, thickness, radius)
-    local colors = NZ_CONFIG.colors.rainbow
-    local segments = 20  -- 边框分段数
-    
-    for i = 1, segments do
-        local colorIdx = ((NZ_UI.rainbowIndex + i - 1) % #colors) + 1
-        local color = colors[colorIdx]
-        local angle = (i - 1) * (360 / segments)
-        
-        -- 计算边框点
-        local points = {}
-        local angleRad = math.rad(angle)
-        local nextAngleRad = math.rad(angle + 360/segments)
-        
-        -- 外圈点
-        local ox1 = x + w/2 + (w/2) * math.cos(angleRad)
-        local oy1 = y + h/2 + (h/2) * math.sin(angleRad)
-        local ox2 = x + w/2 + (w/2) * math.cos(nextAngleRad)
-        local oy2 = y + h/2 + (h/2) * math.sin(nextAngleRad)
-        
-        -- 内圈点
-        local ix1 = x + w/2 + (w/2 - thickness) * math.cos(angleRad)
-        local iy1 = y + h/2 + (h/2 - thickness) * math.sin(angleRad)
-        local ix2 = x + w/2 + (w/2 - thickness) * math.cos(nextAngleRad)
-        local iy2 = y + h/2 + (h/2 - thickness) * math.sin(nextAngleRad)
-        
-        -- 绘制边框段
-        if draw_quad then
-            draw_set_color(color[1], color[2], color[3], color[4])
-            draw_quad(ox1, oy1, ox2, oy2, ix2, iy2, ix1, iy1)
-        end
-    end
-end
-
--- 绘制欢迎界面
-function DrawWelcomeUI()
-    local cfg = NZ_CONFIG
-    local ui = NZ_UI
-    local w = cfg.welcome
-    
-    -- 获取屏幕尺寸
-    local screenW, screenH = GetScreenSize()
-    local centerX = screenW / 2
-    local centerY = screenH / 2
-    
-    -- 计算欢迎界面位置和大小
-    local welcomeWidth = math.min(600, screenW * 0.8)
-    local welcomeHeight = math.min(500, screenH * 0.8)
-    local welcomeX = centerX - welcomeWidth / 2
-    local welcomeY = centerY - welcomeHeight / 2
-    
-    -- 保存位置供点击检测使用
-    ui.welcomeX = welcomeX
-    ui.welcomeY = welcomeY
-    ui.welcomeWidth = welcomeWidth
-    ui.welcomeHeight = welcomeHeight
-    
-    -- 绘制背景
-    DrawRoundedRect(welcomeX, welcomeY, welcomeWidth, welcomeHeight, 20, cfg.colors.welcomeBg)
-    
-    -- 绘制彩虹边框
-    DrawRainbowBorder(welcomeX, welcomeY, welcomeWidth, welcomeHeight, 6, 20)
-    
-    -- 计算图片位置
-    local imageX = centerX - w.imageWidth / 2
-    local imageY = welcomeY + 40
-    
-    -- 绘制图片
-    DrawImage(NZ_IMAGES.welcomeImage, imageX, imageY, w.imageWidth, w.imageHeight)
-    
-    -- 绘制标题
-    local titleY = imageY + w.imageHeight + 30
-    DrawText("NZ脚本中心", centerX, titleY, "title", cfg.colors.title, "center")
-    
-    -- 绘制版本号
-    local versionY = titleY + 40
-    DrawText("版本 " .. cfg.version, centerX, versionY, "normal", cfg.colors.versionColor, "center")
-    
-    -- 绘制欢迎文字（彩红色）
-    local welcomeY = versionY + 50
-    local welcomeText = "欢迎使用NZ脚本中心"
-    
-    -- 创建彩虹色文字效果
-    local textWidth = 200  -- 估计文本宽度
-    local textX = centerX - textWidth / 2
-    
-    -- 绘制彩虹渐变文本
-    for i = 1, #welcomeText do
-        local char = welcomeText:sub(i, i)
-        local colorIdx = ((ui.rainbowIndex + i - 1) % #cfg.colors.rainbow) + 1
-        local color = cfg.colors.rainbow[colorIdx]
-        
-        -- 覆盖彩红色
-        if i == 1 or i == 2 or i == #welcomeText-1 or i == #welcomeText then
-            color = cfg.colors.welcomeText
-        end
-        
-        local charX = textX + (i-1) * 20
-        DrawText(char, charX, welcomeY, "welcome", color)
-    end
-    
-    -- 绘制加载进度条
-    local progressWidth = welcomeWidth - 100
-    local progressHeight = 20
-    local progressX = centerX - progressWidth / 2
-    local progressY = welcomeY + 60
-    
-    -- 进度条背景
-    DrawRoundedRect(progressX, progressY, progressWidth, progressHeight, 10, {0.2, 0.2, 0.2, 1.0})
-    
-    -- 进度条前景
-    local progress = ui.welcomeTimer / cfg.welcome.duration
-    local fillWidth = progressWidth * math.min(1.0, progress)
-    if fillWidth > 0 then
-        local progressColor = {
-            progress,                    -- R
-            1.0 - progress,              -- G
-            0.5,                         -- B
-            1.0                          -- A
-        }
-        DrawRoundedRect(progressX, progressY, fillWidth, progressHeight, 10, progressColor)
-    end
-    
-    -- 绘制跳过按钮
-    if cfg.welcome.showSkipButton then
-        local skipBtnWidth = 100
-        local skipBtnHeight = 40
-        local skipBtnX = centerX - skipBtnWidth / 2
-        local skipBtnY = progressY + progressHeight + 30
-        
-        -- 保存按钮位置供点击检测
-        ui.skipBtnX = skipBtnX
-        ui.skipBtnY = skipBtnY
-        ui.skipBtnWidth = skipBtnWidth
-        ui.skipBtnHeight = skipBtnHeight
-        
-        -- 绘制跳过按钮
-        DrawRoundedRect(skipBtnX, skipBtnY, skipBtnWidth, skipBtnHeight, 10, cfg.colors.skipBtn)
-        DrawText("跳过", centerX, skipBtnY + 10, "normal", cfg.colors.skipBtnText, "center")
-        
-        -- 显示剩余时间
-        local remaining = math.ceil(cfg.welcome.duration - ui.welcomeTimer)
-        if remaining > 0 then
-            DrawText("(" .. remaining .. "秒后自动进入)", centerX, skipBtnY + skipBtnHeight + 10, "small", {0.7, 0.7, 0.7, 1.0}, "center")
-        end
-    end
-    
-    -- 绘制作者信息
-    local authorY = welcomeY + 150
-    DrawText(cfg.author, centerX, authorY, "normal", cfg.colors.authorColor, "center")
-    
-    -- 绘制提示
-    local hintY = authorY + 30
-    DrawText("按ESC键退出脚本", centerX, hintY, "small", {0.6, 0.6, 0.6, 1.0}, "center")
-end
-
--- 绘制主UI
-function DrawMainUI()
-    local cfg = NZ_CONFIG
-    local ui = NZ_UI
-    local s = cfg.size
-    
-    -- 绘制主背景
-    DrawRoundedRect(ui.mainX, ui.mainY, s.mainWidth, s.mainHeight, s.cornerRadius, cfg.colors.background)
-    
-    -- 绘制彩虹边框
-    DrawRainbowBorder(ui.mainX, ui.mainY, s.mainWidth, s.mainHeight, s.borderWidth, s.cornerRadius)
-    
-    -- 绘制标题
-    DrawText(cfg.scriptName, ui.mainX + 20, ui.mainY + 20, "title", cfg.colors.title)
-    
-    -- 绘制版本号
-    DrawText("v" .. cfg.version, ui.mainX + s.mainWidth - 100, ui.mainY + 25, "normal", cfg.colors.versionColor)
-    
-    -- 绘制作者
-    DrawText(cfg.author, ui.mainX + 20, ui.mainY + 60, "normal", cfg.colors.authorColor)
-    
-    -- 绘制缩小按钮
-    DrawRoundedRect(ui.mainX + s.mainWidth - 50, ui.mainY + 20, 30, 30, 5, cfg.colors.minimizeBtn)
-    DrawText("-", ui.mainX + s.mainWidth - 45, ui.mainY + 22, "normal", {1, 1, 1, 1})
-    
-    -- 绘制左侧类型导航
-    local navX = ui.mainX + 20
-    local navY = ui.mainY + 100
-    
-    DrawRoundedRect(navX, navY, s.navWidth, 300, s.cornerRadius, cfg.colors.typeNavBg)
-    DrawText("类型导航", navX + 20, navY - 20, "normal", {1, 1, 1, 1})
-    
-    for i, item in ipairs(cfg.typeNavItems) do
-        local itemY = navY + 10 + (i-1) * 45
-        local color = (ui.selectedType == i) and cfg.colors.navItemActive or cfg.colors.navItem
-        
-        DrawRoundedRect(navX + 10, itemY, s.navWidth - 20, 40, 10, color)
-        DrawText(tostring(i) .. ". " .. item, navX + 20, itemY + 10, "normal", {1, 1, 1, 1})
-    end
-    
-    -- 绘制右侧功能导航
-    local funcX = ui.mainX + s.mainWidth - s.navWidth - 20
-    local funcY = navY
-    
-    DrawRoundedRect(funcX, funcY, s.navWidth, 300, s.cornerRadius, cfg.colors.funcNavBg)
-    DrawText("功能导航", funcX + 20, funcY - 20, "normal", {1, 1, 1, 1})
-    
-    for i, item in ipairs(cfg.funcNavItems) do
-        local itemY = funcY + 10 + (i-1) * 45
-        local color = (ui.selectedFunc == i) and cfg.colors.navItemActive or cfg.colors.navItem
-        
-        DrawRoundedRect(funcX + 10, itemY, s.navWidth - 20, 40, 10, color)
-        DrawText(tostring(i) .. ". " .. item, funcX + 20, itemY + 10, "normal", {1, 1, 1, 1})
-    end
-end
-
--- 绘制缩小按钮
-function DrawMinimizedButton()
-    local ui = NZ_UI
-    local color = cfg.colors.minimizedBtn
-    
-    -- 绘制圆形按钮
-    if draw_circle then
-        draw_set_color(color[1], color[2], color[3], color[4])
-        draw_circle(ui.btnX, ui.btnY, ui.btnSize, false, 32)
-        
-        -- 填充
-        draw_set_color(color[1] * 0.8, color[2] * 0.8, color[3] * 0.8, color[4])
-        draw_circle(ui.btnX, ui.btnY, ui.btnSize - 2, true, 32)
-    else
-        -- 如果API不支持圆形，绘制正方形
-        DrawRoundedRect(ui.btnX - ui.btnSize, ui.btnY - ui.btnSize, 
-                       ui.btnSize * 2, ui.btnSize * 2, ui.btnSize, color)
-    end
-    
-    -- 绘制按钮文字
-    DrawText("NZ", ui.btnX - 10, ui.btnY - 10, "normal", {1, 1, 1, 1})
-end
-
--- 处理欢迎界面的输入
-function HandleWelcomeInput(x, y, action)
-    local ui = NZ_UI
-    local cfg = NZ_CONFIG
-    
-    if action == "down" then
-        ui.touchX, ui.touchY = x, y
-        ui.isTouching = true
-        
-        -- 检查是否点击了跳过按钮
-        if cfg.welcome.showSkipButton and ui.skipBtnX and ui.skipBtnY then
-            if x >= ui.skipBtnX and x <= ui.skipBtnX + ui.skipBtnWidth and
-               y >= ui.skipBtnY and y <= ui.skipBtnY + ui.skipBtnHeight then
-                ui.isWelcome = false
-                return true
+    for buttonName, buttonCategory in pairs(buttons) do
+        local button = NavigationFrame:FindFirstChild(buttonName)
+        if button then
+            if buttonCategory == category then
+                button.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+            else
+                button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             end
         end
-        
-        -- 点击任意位置跳过
-        if x >= ui.welcomeX and x <= ui.welcomeX + ui.welcomeWidth and
-           y >= ui.welcomeY and y <= ui.welcomeY + ui.welcomeHeight then
-            -- 可以设置为点击任意位置跳过
-            -- ui.isWelcome = false
-            -- return true
-        end
-        
-    elseif action == "up" then
-        ui.isTouching = false
     end
-    
-    return false
 end
 
--- 处理主界面的输入
-function HandleMainInput(x, y, action)
-    local ui = NZ_UI
-    local cfg = NZ_CONFIG
-    local s = cfg.size
-    local currentTime = os.clock()
+-- 导航按钮点击事件
+ScriptInfoButton.MouseButton1Click:Connect(function()
+    currentCategory = "ScriptInfo"
+    loadCategory("ScriptInfo")
+end)
+
+DeveloperButton.MouseButton1Click:Connect(function()
+    currentCategory = "Developer"
+    loadCategory("Developer")
+end)
+
+GeneralButton.MouseButton1Click:Connect(function()
+    currentCategory = "General"
+    loadCategory("General")
+end)
+
+FEButton.MouseButton1Click:Connect(function()
+    currentCategory = "FE"
+    loadCategory("FE")
+end)
+
+ESPButton.MouseButton1Click:Connect(function()
+    currentCategory = "ESP"
+    loadCategory("ESP")
+end)
+
+BlindFireButton.MouseButton1Click:Connect(function()
+    currentCategory = "BlindFire"
+    loadCategory("BlindFire")
+end)
+
+-- 创建最小化面板
+MinimizedPanel.Name = "MinimizedPanel"
+MinimizedPanel.Parent = ScreenGui
+MinimizedPanel.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+MinimizedPanel.Size = panelSize
+MinimizedPanel.Position = UDim2.new(0.9, -250, 0.05, 0)
+MinimizedPanel.Active = false
+MinimizedPanel.Draggable = false
+MinimizedPanel.Visible = false
+
+-- 面板圆角
+PanelUICorner.Parent = MinimizedPanel
+PanelUICorner.CornerRadius = UDim.new(0, 8)
+
+-- 面板彩虹轮廓
+PanelUIStroke.Parent = MinimizedPanel
+PanelUIStroke.Color = Color3.fromRGB(255, 0, 0)
+PanelUIStroke.Thickness = 2.5
+PanelUIStroke.LineJoinMode = Enum.LineJoinMode.Round
+PanelUIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- 面板彩虹动画
+spawn(function()
+    while true do
+        for i = 1, #colorSequence.Keypoints do
+            local nextIndex = i % #colorSequence.Keypoints + 1
+            local tweenInfo = TweenInfo.new(
+                0.5,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            )
+            local tween = game:GetService("TweenService"):Create(
+                PanelUIStroke,
+                tweenInfo,
+                {Color = colorSequence.Keypoints[nextIndex].Value}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+    end
+end)
+
+-- 面板标题
+PanelTitle.Name = "PanelTitle"
+PanelTitle.Parent = MinimizedPanel
+PanelTitle.BackgroundTransparency = 1
+PanelTitle.Position = UDim2.new(0, 0, 0, 0)
+PanelTitle.Size = UDim2.new(1, 0, 1, 0)
+PanelTitle.Font = Enum.Font.GothamBold
+PanelTitle.Text = "NZ Script Center"
+PanelTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+PanelTitle.TextScaled = true
+PanelTitle.ZIndex = 2
+
+-- 面板标题描边
+PanelTitleStroke.Parent = PanelTitle
+PanelTitleStroke.Color = Color3.fromRGB(255, 0, 0)
+PanelTitleStroke.Thickness = 1.5
+PanelTitleStroke.LineJoinMode = Enum.LineJoinMode.Round
+PanelTitleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- 面板标题彩虹动画
+spawn(function()
+    while true do
+        for i = 1, #colorSequence.Keypoints do
+            local nextIndex = i % #colorSequence.Keypoints + 1
+            local tweenInfo = TweenInfo.new(
+                0.5,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            )
+            local tween = game:GetService("TweenService"):Create(
+                PanelTitleStroke,
+                tweenInfo,
+                {Color = colorSequence.Keypoints[nextIndex].Value}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+    end
+end)
+
+-- 创建球形展开按钮
+ExpandSphere.Name = "ExpandSphere"
+ExpandSphere.Parent = ScreenGui
+ExpandSphere.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+ExpandSphere.Size = UDim2.new(0, 50, 0, 50)
+ExpandSphere.Position = UDim2.new(0.95, -25, 0.05, 0)
+ExpandSphere.Visible = false
+
+-- 球形圆角
+SphereCorner.Parent = ExpandSphere
+SphereCorner.CornerRadius = UDim.new(1, 0)
+
+-- 球形彩虹描边
+SphereStroke.Parent = ExpandSphere
+SphereStroke.Color = Color3.fromRGB(255, 0, 0)
+SphereStroke.Thickness = 2.5
+SphereStroke.LineJoinMode = Enum.LineJoinMode.Round
+
+-- 球形彩虹动画
+spawn(function()
+    while true do
+        for i = 1, #colorSequence.Keypoints do
+            local nextIndex = i % #colorSequence.Keypoints + 1
+            local tweenInfo = TweenInfo.new(
+                0.5,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            )
+            local tween = game:GetService("TweenService"):Create(
+                SphereStroke,
+                tweenInfo,
+                {Color = colorSequence.Keypoints[nextIndex].Value}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+    end
+end)
+
+-- 球形按钮
+SphereButton.Name = "SphereButton"
+SphereButton.Parent = ExpandSphere
+SphereButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SphereButton.BackgroundTransparency = 1
+SphereButton.Size = UDim2.new(1, 0, 1, 0)
+SphereButton.Font = Enum.Font.GothamBold
+SphereButton.Text = ""
+SphereButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SphereButton.TextSize = 20
+SphereButton.ZIndex = 2
+
+-- 球形按钮圆角
+local SphereButtonCorner = Instance.new("UICorner")
+SphereButtonCorner.Parent = SphereButton
+SphereButtonCorner.CornerRadius = UDim.new(1, 0)
+
+-- 球形文字
+SphereText.Name = "SphereText"
+SphereText.Parent = ExpandSphere
+SphereText.BackgroundTransparency = 1
+SphereText.Size = UDim2.new(1, 0, 1, 0)
+SphereText.Font = Enum.Font.GothamBold
+SphereText.Text = "NZ"
+SphereText.TextColor3 = Color3.fromRGB(255, 255, 255)
+SphereText.TextScaled = true
+SphereText.ZIndex = 3
+
+-- 球形文字描边
+SphereTextStroke.Parent = SphereText
+SphereTextStroke.Color = Color3.fromRGB(0, 255, 255)
+SphereTextStroke.Thickness = 1.5
+SphereTextStroke.LineJoinMode = Enum.LineJoinMode.Round
+
+-- 球形文字彩虹动画
+spawn(function()
+    while true do
+        for i = 1, #colorSequence.Keypoints do
+            local nextIndex = i % #colorSequence.Keypoints + 1
+            local tweenInfo = TweenInfo.new(
+                0.5,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            )
+            local tween = game:GetService("TweenService"):Create(
+                SphereTextStroke,
+                tweenInfo,
+                {Color = colorSequence.Keypoints[nextIndex].Value}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+    end
+end)
+
+-- 最小化/展开函数
+local function minimizeUI()
+    isMinimized = true
+    MinimizeButton.Text = "+"
     
-    if action == "down" then
-        ui.touchX, ui.touchY = x, y
-        ui.isTouching = true
-        
-        if ui.isMinimized then
-            -- 检查是否点击了缩小按钮
-            local distance = math.sqrt((x - ui.btnX)^2 + (y - ui.btnY)^2)
-            if distance <= ui.btnSize then
-                -- 双击检测
-                if currentTime - ui.lastClickTime < ui.doubleClickThreshold then
-                    -- 双击：滑动动画
-                    ui.btnX = ui.btnX + 50
-                    ui.btnY = ui.btnY + 50
-                    
-                    -- 限制在屏幕内
-                    local screenW, screenH = GetScreenSize()
-                    ui.btnX = math.max(ui.btnSize, math.min(screenW - ui.btnSize, ui.btnX))
-                    ui.btnY = math.max(ui.btnSize, math.min(screenH - ui.btnSize, ui.btnY))
-                else
-                    -- 单击：开始拖动
-                    ui.isDragging = true
-                    ui.dragOffsetX = x - ui.btnX
-                    ui.dragOffsetY = y - ui.btnY
-                end
-                ui.lastClickTime = currentTime
-                return true
+    -- 创建缩小动画
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local sizeTween = game:GetService("TweenService"):Create(
+        Frame,
+        tweenInfo,
+        {Size = UDim2.new(0, 0, 0, 0)}
+    )
+    
+    sizeTween:Play()
+    sizeTween.Completed:Wait()
+    
+    Frame.Visible = false
+    MinimizedPanel.Visible = false
+    ExpandSphere.Visible = true
+    
+    -- 设置球形按钮位置
+    ExpandSphere.Position = UDim2.new(0.95, -25, 0.05, 0)
+end
+
+local function expandUI()
+    isMinimized = false
+    MinimizeButton.Text = "-"
+    
+    ExpandSphere.Visible = false
+    Frame.Visible = true
+    
+    -- 设置Frame到屏幕中心
+    Frame.Position = originalPosition
+    Frame.Size = UDim2.new(0, 0, 0, 0)
+    
+    -- 创建展开动画
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local sizeTween = game:GetService("TweenService"):Create(
+        Frame,
+        tweenInfo,
+        {Size = originalSize}
+    )
+    
+    sizeTween:Play()
+    
+    -- 重新加载当前类型的脚本
+    loadCategory(currentCategory)
+end
+
+-- 最小化按钮点击事件
+MinimizeButton.MouseButton1Click:Connect(function()
+    if not isMinimized then
+        minimizeUI()
+    else
+        expandUI()
+    end
+end)
+
+-- 球形按钮长按检测
+local longPressTimer = 0
+local isLongPressing = false
+local longPressThreshold = 1.5
+
+SphereButton.MouseButton1Down:Connect(function()
+    isLongPressing = true
+    longPressTimer = tick()
+    
+    -- 显示长按提示
+    local originalText = SphereText.Text
+    SphereText.Text = "按住..."
+    
+    spawn(function()
+        while isLongPressing do
+            local elapsedTime = tick() - longPressTimer
+            if elapsedTime >= longPressThreshold then
+                SphereText.Text = "执行代码"
+                break
+            end
+            wait(0.1)
+        end
+    end)
+end)
+
+SphereButton.MouseButton1Up:Connect(function()
+    local elapsedTime = tick() - longPressTimer
+    
+    if isLongPressing then
+        if elapsedTime < longPressThreshold then
+            -- 短按：展开UI
+            if isMinimized then
+                expandUI()
             end
         else
-            -- 检查缩小按钮
-            if x >= ui.mainX + s.mainWidth - 50 and x <= ui.mainX + s.mainWidth - 20 and
-               y >= ui.mainY + 20 and y <= ui.mainY + 50 then
-                ui.isMinimized = true
-                return true
+            -- 长按：执行代码
+            if ScreenGui.Parent ~= game.CoreGui then
+                ScreenGui.Parent = game.CoreGui
             end
-            
-            -- 检查类型导航项
-            local navX = ui.mainX + 20
-            local navY = ui.mainY + 100
-            
-            for i = 1, #cfg.typeNavItems do
-                local itemY = navY + 10 + (i-1) * 45
-                if x >= navX + 10 and x <= navX + s.navWidth - 10 and
-                   y >= itemY and y <= itemY + 40 then
-                    ui.selectedType = i
-                    OnNavItemSelected("type", i, cfg.typeNavItems[i])
-                    return true
-                end
-            end
-            
-            -- 检查功能导航项
-            local funcX = ui.mainX + s.mainWidth - s.navWidth - 20
-            
-            for i = 1, #cfg.funcNavItems do
-                local itemY = navY + 10 + (i-1) * 45
-                if x >= funcX + 10 and x <= funcX + s.navWidth - 10 and
-                   y >= itemY and y <= itemY + 40 then
-                    ui.selectedFunc = i
-                    OnNavItemSelected("func", i, cfg.funcNavItems[i])
-                    return true
-                end
-            end
+            SphereText.Text = "代码已执行"
+            wait(0.5)
         end
         
-    elseif action == "move" then
-        ui.touchX, ui.touchY = x, y
-        
-        if ui.isMinimized and ui.isDragging then
-            -- 拖动按钮
-            ui.btnX = x - ui.dragOffsetX
-            ui.btnY = y - ui.dragOffsetY
-            
-            -- 限制在屏幕内
-            local screenW, screenH = GetScreenSize()
-            ui.btnX = math.max(ui.btnSize, math.min(screenW - ui.btnSize, ui.btnX))
-            ui.btnY = math.max(ui.btnSize, math.min(screenH - ui.btnSize, ui.btnY))
-            return true
-        end
-        
-    elseif action == "up" then
-        if ui.isTouching then
-            ui.isTouching = false
-            
-            if ui.isMinimized and ui.isDragging then
-                ui.isDragging = false
-                
-                -- 单击释放时恢复UI
-                if currentTime - ui.lastClickTime >= ui.doubleClickThreshold then
-                    ui.isMinimized = false
-                end
-                return true
-            end
-        end
+        isLongPressing = false
+        SphereText.Text = "NZ"
     end
-    
-    return false
+end)
+
+-- 设置ZIndex层级
+Header.ZIndex = 2
+Title.ZIndex = 3
+VersionLabel.ZIndex = 3
+Author.ZIndex = 3
+MinimizeButton.ZIndex = 3
+
+NavigationFrame.ZIndex = 2
+ScriptInfoButton.ZIndex = 3
+DeveloperButton.ZIndex = 3
+GeneralButton.ZIndex = 3
+FEButton.ZIndex = 3
+ESPButton.ZIndex = 3
+BlindFireButton.ZIndex = 3
+
+ScriptsContainer.ZIndex = 2
+
+MinimizedPanel.ZIndex = 10
+PanelTitle.ZIndex = 11
+PanelTitleStroke.ZIndex = 10
+
+ExpandSphere.ZIndex = 20
+SphereButton.ZIndex = 21
+SphereText.ZIndex = 22
+SphereTextStroke.ZIndex = 21
+
+-- 初始加载脚本信息
+loadCategory("ScriptInfo")
+
+-- 确保UI在CoreGui中
+if ScreenGui.Parent ~= game.CoreGui then
+    ScreenGui.Parent = game.CoreGui
 end
 
--- 处理触摸/点击输入
-function HandleInput(x, y, action)
-    if NZ_UI.isWelcome then
-        return HandleWelcomeInput(x, y, action)
-    else
-        return HandleMainInput(x, y, action)
-    end
-end
-
--- 导航项选择回调
-function OnNavItemSelected(navType, index, item)
-    print(string.format("选择了%s导航: [%d] %s", 
-          navType == "type" and "类型" or "功能", index, item))
-    
-    -- 这里可以添加实际功能代码
-    if navType == "func" then
-        if index == 1 then
-            StartScript()
-        elseif index == 2 then
-            OpenSettings()
-        elseif index == 3 then
-            ShowLogs()
-        elseif index == 4 then
-            ShowHelp()
-        elseif index == 5 then
-            ShowAbout()
-        elseif index == 6 then
-            ExitScript()
-        end
-    end
-end
-
--- 脚本功能函数
-function StartScript()
-    print("脚本开始运行...")
-    -- 这里添加启动脚本的代码
-end
-
-function OpenSettings()
-    print("打开设置...")
-    -- 这里添加打开设置的代码
-end
-
-function ShowLogs()
-    print("显示日志...")
-    -- 这里添加显示日志的代码
-end
-
-function ShowHelp()
-    print("显示帮助文档...")
-    -- 这里添加显示帮助的代码
-end
-
-function ShowAbout()
-    print("NZ脚本中心 v1.0")
-    print("主作者：南烛")
-    print("功能：游戏辅助脚本集合")
-end
-
-function ExitScript()
-    print("退出脚本...")
-    -- 这里添加退出脚本的代码
-    NZ_UI.isRunning = false
-end
-
--- 加载图片资源
-function LoadImageResources()
-    local imageUrl = NZ_CONFIG.welcome.imageUrl
-    
-    -- 尝试加载图片
-    if load_image then
-        NZ_IMAGES.welcomeImage = load_image(imageUrl)
-        if NZ_IMAGES.welcomeImage then
-            NZ_IMAGES.isImageLoaded = true
-            print("成功加载欢迎图片")
-        else
-            print("无法加载图片: " .. imageUrl)
-            print("将使用默认占位符")
-        end
-    else
-        print("当前环境不支持图片加载")
-        print("将使用默认占位符")
-    end
-end
-
--- 获取屏幕尺寸（需要根据实际游戏API调整）
-function GetScreenSize()
-    -- 这里需要替换为实际的游戏API获取屏幕尺寸
-    -- 示例：返回默认尺寸
-    return 1920, 1080
-end
-
--- 更新函数（每帧调用）
-function Update(deltaTime)
-    local ui = NZ_UI
-    local cfg = NZ_CONFIG
-    
-    -- 更新彩虹边框颜色
-    ui.rainbowTimer = ui.rainbowTimer + deltaTime
-    if ui.rainbowTimer >= 0.1 then  -- 每0.1秒更新一次
-        ui.rainbowTimer = 0
-        ui.rainbowIndex = (ui.rainbowIndex % #cfg.colors.rainbow) + 1
-    end
-    
-    -- 更新欢迎界面计时器
-    if ui.isWelcome then
-        ui.welcomeTimer = ui.welcomeTimer + deltaTime
-        
-        -- 自动跳过欢迎界面
-        if ui.welcomeTimer >= cfg.welcome.duration then
-            ui.isWelcome = false
-        end
-    end
-    
-    -- 处理键盘快捷键
-    if is_key_pressed then
-        if is_key_pressed("F1") then
-            if not ui.isWelcome then
-                ui.isMinimized = not ui.isMinimized
-            end
-        elseif is_key_pressed("ESC") then
-            ExitScript()
-        elseif is_key_pressed("SPACE") and ui.isWelcome then
-            -- 空格键跳过欢迎界面
-            ui.isWelcome = false
-        end
-    end
-end
-
--- 绘制函数（每帧调用）
-function Draw()
-    if not NZ_UI.isRunning then
-        return
-    end
-    
-    if NZ_UI.isWelcome then
-        DrawWelcomeUI()
-    else
-        if NZ_UI.isMinimized then
-            DrawMinimizedButton()
-        else
-            DrawMainUI()
-        end
-    end
-end
-
--- 主循环
-function MainLoop()
-    local lastTime = os.clock()
-    NZ_UI.isRunning = true
-    
-    while NZ_UI.isRunning do
-        local currentTime = os.clock()
-        local deltaTime = currentTime - lastTime
-        lastTime = currentTime
-        
-        -- 更新
-        Update(deltaTime)
-        
-        -- 绘制
-        if begin_draw then
-            begin_draw()
-        end
-        
-        Draw()
-        
-        if end_draw then
-            end_draw()
-        end
-        
-        -- 简单的延迟，避免占用过多CPU
-        local sleepTime = 0.016  -- 约60FPS
-        if os.sleep then
-            os.sleep(sleepTime)
-        end
-    end
-end
-
--- 初始化函数
-function Initialize()
-    print("NZ脚本中心 v1.0 初始化...")
-    print("主作者：南烛")
-    print("欢迎界面显示中...")
-    print("按F1切换最小化/最大化，ESC退出，空格键跳过欢迎界面")
-    
-    -- 获取屏幕尺寸并居中UI
-    local screenW, screenH = GetScreenSize()
-    NZ_UI.mainX = (screenW - NZ_CONFIG.size.mainWidth) / 2
-    NZ_UI.mainY = (screenH - NZ_CONFIG.size.mainHeight) / 2
-    NZ_UI.btnX = screenW - 100
-    NZ_UI.btnY = 100
-    
-    -- 加载图片资源
-    LoadImageResources()
-    
-    -- 设置初始选择
-    NZ_UI.selectedType = 1
-    NZ_UI.selectedFunc = 1
-    
-    -- 重置欢迎界面计时器
-    NZ_UI.welcomeTimer = 0
-    NZ_UI.isWelcome = true
-end
-
--- 游戏API适配层
--- 注：以下函数需要根据实际游戏环境提供的API进行替换
-
--- 假设的游戏绘图API函数（需要根据实际情况实现）
-function draw_set_color(r, g, b, a)
-    -- 设置绘图颜色
-    -- 实际游戏中可能有类似的API，如：SetDrawColor(r, g, b, a)
-end
-
-function draw_rect(x1, y1, x2, y2)
-    -- 绘制矩形
-    -- 实际游戏中可能有类似的API
-end
-
-function draw_circle(x, y, radius, filled, segments)
-    -- 绘制圆形
-    -- 实际游戏中可能有类似的API
-end
-
-function draw_text(x, y, text)
-    -- 绘制文本
-    -- 实际游戏中可能有类似的API
-end
-
-function draw_quad(x1, y1, x2, y2, x3, y3, x4, y4)
-    -- 绘制四边形
-    -- 实际游戏中可能有类似的API
-end
-
-function draw_set_font(fontName)
-    -- 设置字体
-    -- 实际游戏中可能有类似的API
-end
-
-function draw_image(image, x, y, width, height)
-    -- 绘制图片
-    -- 实际游戏中可能有类似的API
-end
-
-function load_image(url)
-    -- 加载图片
-    -- 实际游戏中可能有类似的API
-    -- 这里返回nil，实际使用时需要根据游戏环境实现
-    return nil
-end
-
-function is_key_pressed(key)
-    -- 检查按键是否按下
-    -- 实际游戏中可能有类似的API
-    return false
-end
-
-function begin_draw()
-    -- 开始绘制
-    -- 实际游戏中可能需要调用
-end
-
-function end_draw()
-    -- 结束绘制
-    -- 实际游戏中可能需要调用
-end
-
--- 触摸/鼠标输入处理（需要由游戏调用）
-function OnTouchEvent(x, y, action)
-    -- 游戏应该在有触摸/鼠标事件时调用此函数
-    -- action: "down", "move", "up"
-    return HandleInput(x, y, action)
-end
-
--- 主入口点
-function Main()
-    Initialize()
-    
-    -- 启动主循环
-    if RunInGameLoop then
-        -- 如果游戏有自己的主循环，只注册回调
-        RegisterUpdateCallback(Update)
-        RegisterDrawCallback(Draw)
-    else
-        -- 否则启动自己的主循环
-        MainLoop()
-    end
-    
-    return 0
-end
-
--- 自动运行
-local status, err = pcall(Main)
-if not status then
-    print("脚本运行错误: " .. tostring(err))
-end
-  
+print("NZ Script Center V1.0 已加载")
+print("作者: 南烛")
+print("当前版本: V1.0")
+print("QQ交流群: 445825485")
