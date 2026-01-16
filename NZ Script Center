@@ -2,28 +2,45 @@ local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local UICorner = Instance.new("UICorner")
 local UIStroke = Instance.new("UIStroke")
+local BackgroundGradient = Instance.new("UIGradient")
 local Header = Instance.new("Frame")
+local HeaderGradient = Instance.new("UIGradient")
 local UICorner_Header = Instance.new("UICorner")
 local Title = Instance.new("TextLabel")
 local VersionLabel = Instance.new("TextLabel")
 local Author = Instance.new("TextLabel")
 local MinimizeButton = Instance.new("TextButton")
+local MinimizeButtonGradient = Instance.new("UIGradient")
+local CloseButton = Instance.new("TextButton")
+local CloseButtonGradient = Instance.new("UIGradient")
 
 -- 导航栏相关
 local NavigationFrame = Instance.new("Frame")
 local NavigationCorner = Instance.new("UICorner")
 local NavigationStroke = Instance.new("UIStroke")
+local NavigationGradient = Instance.new("UIGradient")
 local ScriptInfoButton = Instance.new("TextButton")
+local ScriptInfoButtonGradient = Instance.new("UIGradient")
 local DeveloperButton = Instance.new("TextButton")
+local DeveloperButtonGradient = Instance.new("UIGradient")
 local GeneralButton = Instance.new("TextButton")
+local GeneralButtonGradient = Instance.new("UIGradient")
 local FEButton = Instance.new("TextButton")
+local FEButtonGradient = Instance.new("UIGradient")
 local ESPButton = Instance.new("TextButton")
+local ESPButtonGradient = Instance.new("UIGradient")
 local BlindFireButton = Instance.new("TextButton")
+local BlindFireButtonGradient = Instance.new("UIGradient")
+local AOTUButton = Instance.new("TextButton")
+local AOTUButtonGradient = Instance.new("UIGradient")
+local BoxingButton = Instance.new("TextButton")
+local BoxingButtonGradient = Instance.new("UIGradient")
 
 -- 脚本容器相关
 local ScriptsContainer = Instance.new("ScrollingFrame")
 local ContainerCorner = Instance.new("UICorner")
 local ContainerStroke = Instance.new("UIStroke")
+local ContainerGradient = Instance.new("UIGradient")
 local UIListLayout = Instance.new("UIListLayout")
 local UIPadding = Instance.new("UIPadding")
 
@@ -31,6 +48,7 @@ local UIPadding = Instance.new("UIPadding")
 local MinimizedPanel = Instance.new("Frame")
 local PanelUICorner = Instance.new("UICorner")
 local PanelUIStroke = Instance.new("UIStroke")
+local PanelGradient = Instance.new("UIGradient")
 local PanelTitle = Instance.new("TextLabel")
 local PanelTitleStroke = Instance.new("UIStroke")
 
@@ -38,13 +56,15 @@ local PanelTitleStroke = Instance.new("UIStroke")
 local ExpandSphere = Instance.new("Frame")
 local SphereCorner = Instance.new("UICorner")
 local SphereStroke = Instance.new("UIStroke")
+local SphereGradient = Instance.new("UIGradient")
 local SphereButton = Instance.new("TextButton")
+local SphereButtonGradient = Instance.new("UIGradient")
 local SphereText = Instance.new("TextLabel")
 local SphereTextStroke = Instance.new("UIStroke")
 
 -- 状态变量
 local isMinimized = false
-local originalSize = UDim2.new(0, 400, 0, 380)
+local originalSize = UDim2.new(0, 420, 0, 400)
 local originalPosition = UDim2.new(0.4, 0, 0.35, 0)
 local panelSize = UDim2.new(0, 250, 0, 60)
 local currentCategory = "ScriptInfo"
@@ -59,6 +79,48 @@ local teamCheckEnabled = false
 local showHitboxEnabled = false
 local antiHitEnabled = false
 local enemyHitboxEnabled = false
+local autoCollectBallEnabled = false
+local autoPunchEnabled = false
+
+-- 脚本线程
+local autoCollectThread = nil
+local autoPunchThread = nil
+
+-- 高级颜色配置
+local ColorPalette = {
+    Primary = Color3.fromRGB(28, 28, 36),
+    Secondary = Color3.fromRGB(40, 40, 50),
+    Accent = Color3.fromRGB(0, 150, 255),
+    Text = Color3.fromRGB(255, 255, 255), -- 更亮的文字
+    Subtext = Color3.fromRGB(220, 220, 230), -- 更亮的副文字
+    Success = Color3.fromRGB(76, 175, 80),
+    Danger = Color3.fromRGB(244, 67, 54),
+    Warning = Color3.fromRGB(255, 193, 7)
+}
+
+-- 高级渐变配置
+local GradientPresets = {
+    BluePurple = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(33, 150, 243)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(156, 39, 176))
+    }),
+    GreenCyan = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(76, 175, 80)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 188, 212))
+    }),
+    OrangeRed = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 152, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(244, 67, 54))
+    }),
+    PurplePink = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(103, 58, 183)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(233, 30, 99))
+    }),
+    DarkTheme = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 40)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 60))
+    })
+}
 
 -- 彩虹颜色序列
 local colorSequence = ColorSequence.new({
@@ -71,6 +133,15 @@ local colorSequence = ColorSequence.new({
     ColorSequenceKeypoint.new(1, Color3.fromRGB(238, 130, 238))
 })
 
+-- 高级字体配置
+local FontPresets = {
+    Title = Enum.Font.GothamBlack,
+    Header = Enum.Font.GothamBold,
+    Body = Enum.Font.GothamMedium,
+    Monospace = Enum.Font.RobotoMono,
+    Elegant = Enum.Font.SourceSansBold
+}
+
 ScreenGui.Name = "NZScriptCenter"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -78,21 +149,27 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- 主框架
 Frame.Name = "Frame"
 Frame.Parent = ScreenGui
-Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+Frame.BackgroundColor3 = ColorPalette.Primary
 Frame.Position = originalPosition
 Frame.Size = originalSize
 Frame.Active = true
 Frame.Draggable = true
 Frame.Visible = true
 
--- 圆角设计
+-- 主框架圆角
 UICorner.Parent = Frame
-UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.CornerRadius = UDim.new(0, 16)
 
--- 彩虹轮廓
+-- 主框架渐变背景
+BackgroundGradient.Name = "BackgroundGradient"
+BackgroundGradient.Parent = Frame
+BackgroundGradient.Color = GradientPresets.DarkTheme
+BackgroundGradient.Rotation = 45
+
+-- 主框架彩虹描边
 UIStroke.Parent = Frame
-UIStroke.Color = Color3.fromRGB(255, 0, 0)
-UIStroke.Thickness = 2.5
+UIStroke.Color = Color3.fromRGB(0, 150, 255)
+UIStroke.Thickness = 3
 UIStroke.LineJoinMode = Enum.LineJoinMode.Round
 UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
@@ -102,8 +179,8 @@ spawn(function()
         for i = 1, #colorSequence.Keypoints do
             local nextIndex = i % #colorSequence.Keypoints + 1
             local tweenInfo = TweenInfo.new(
-                0.5,
-                Enum.EasingStyle.Linear,
+                0.6,
+                Enum.EasingStyle.Quad,
                 Enum.EasingDirection.InOut
             )
             local tween = game:GetService("TweenService"):Create(
@@ -120,37 +197,52 @@ end)
 -- 顶部标题栏
 Header.Name = "Header"
 Header.Parent = Frame
-Header.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Header.Size = UDim2.new(1, 0, 0, 50)
-Header.Position = UDim2.new(0, 0, 0, 0)
+Header.BackgroundColor3 = ColorPalette.Secondary
+Header.Size = UDim2.new(1, -20, 0, 55)
+Header.Position = UDim2.new(0, 10, 0, 10)
 
 -- 标题栏圆角
 UICorner_Header.Parent = Header
 UICorner_Header.CornerRadius = UDim.new(0, 12)
+
+-- 标题栏渐变
+HeaderGradient.Name = "HeaderGradient"
+HeaderGradient.Parent = Header
+HeaderGradient.Color = GradientPresets.BluePurple
+HeaderGradient.Rotation = 90
 
 -- 脚本标题
 Title.Name = "Title"
 Title.Parent = Header
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0.05, 0, 0.15, 0)
-Title.Size = UDim2.new(0.5, 0, 0, 25)
-Title.Font = Enum.Font.GothamBold
-Title.Text = "NZ Script Center"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextScaled = true
+Title.Size = UDim2.new(0.6, 0, 0, 25) -- 宽度增加
+Title.Font = FontPresets.Title
+Title.Text = "NZ SCRIPT CENTER"
+Title.TextColor3 = ColorPalette.Text
+Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextStrokeTransparency = 0.8
+Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 
--- 版本号标签
+-- 版本号标签 - 移动到更右边
 VersionLabel.Name = "VersionLabel"
 VersionLabel.Parent = Header
 VersionLabel.BackgroundTransparency = 1
-VersionLabel.Position = UDim2.new(0.4, 0, 0.15, 0)
+VersionLabel.Position = UDim2.new(0.65, 0, 0.15, 0) -- 向右移动
 VersionLabel.Size = UDim2.new(0.2, 0, 0, 25)
-VersionLabel.Font = Enum.Font.GothamBold
-VersionLabel.Text = "V1.0"
+VersionLabel.Font = FontPresets.Header
+VersionLabel.Text = "V2.0" -- 版本号改为2.0
 VersionLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
-VersionLabel.TextScaled = true
+VersionLabel.TextSize = 16
 VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 版本号发光效果
+local VersionGlow = Instance.new("UIStroke")
+VersionGlow.Parent = VersionLabel
+VersionGlow.Color = Color3.fromRGB(0, 255, 255)
+VersionGlow.Thickness = 1.5
+VersionGlow.Transparency = 0.5
 
 -- 作者信息
 Author.Name = "Author"
@@ -158,102 +250,175 @@ Author.Parent = Header
 Author.BackgroundTransparency = 1
 Author.Position = UDim2.new(0.05, 0, 0.55, 0)
 Author.Size = UDim2.new(0.7, 0, 0, 18)
-Author.Font = Enum.Font.Gotham
-Author.Text = "作者: 南烛"
-Author.TextColor3 = Color3.fromRGB(200, 200, 200)
-Author.TextScaled = true
+Author.Font = FontPresets.Elegant
+Author.Text = "BY: 南烛"
+Author.TextColor3 = ColorPalette.Subtext
+Author.TextSize = 14
 Author.TextXAlignment = Enum.TextXAlignment.Left
 
--- 最小化按钮
+-- 最小化按钮 - 向右移动为关闭按钮腾出空间
 MinimizeButton.Name = "MinimizeButton"
 MinimizeButton.Parent = Header
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-MinimizeButton.Position = UDim2.new(0.85, 0, 0.2, 0)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+MinimizeButton.Position = UDim2.new(0.75, 0, 0.2, 0) -- 向右移动
 MinimizeButton.Size = UDim2.new(0.1, 0, 0, 30)
-MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Font = FontPresets.Header
 MinimizeButton.Text = "-"
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.TextColor3 = ColorPalette.Text
 MinimizeButton.TextSize = 20
+
+-- 最小化按钮渐变
+MinimizeButtonGradient.Name = "MinimizeButtonGradient"
+MinimizeButtonGradient.Parent = MinimizeButton
+MinimizeButtonGradient.Color = GradientPresets.OrangeRed
 
 -- 最小化按钮圆角
 local MinimizeButtonCorner = Instance.new("UICorner")
 MinimizeButtonCorner.Parent = MinimizeButton
-MinimizeButtonCorner.CornerRadius = UDim.new(0, 6)
+MinimizeButtonCorner.CornerRadius = UDim.new(0, 8)
 
 -- 最小化按钮描边
 local MinimizeButtonStroke = Instance.new("UIStroke")
 MinimizeButtonStroke.Parent = MinimizeButton
-MinimizeButtonStroke.Color = Color3.fromRGB(80, 80, 80)
+MinimizeButtonStroke.Color = Color3.fromRGB(80, 80, 100)
 MinimizeButtonStroke.Thickness = 1.5
+
+-- 关闭按钮
+CloseButton.Name = "CloseButton"
+CloseButton.Parent = Header
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseButton.Position = UDim2.new(0.87, 0, 0.2, 0) -- 在最小化按钮右边
+CloseButton.Size = UDim2.new(0.1, 0, 0, 30)
+CloseButton.Font = FontPresets.Header
+CloseButton.Text = "×"
+CloseButton.TextColor3 = ColorPalette.Text
+CloseButton.TextSize = 22
+
+-- 关闭按钮渐变
+CloseButtonGradient.Name = "CloseButtonGradient"
+CloseButtonGradient.Parent = CloseButton
+CloseButtonGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(244, 67, 54)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(183, 28, 28))
+})
+
+-- 关闭按钮圆角
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.Parent = CloseButton
+CloseButtonCorner.CornerRadius = UDim.new(0, 8)
+
+-- 关闭按钮描边
+local CloseButtonStroke = Instance.new("UIStroke")
+CloseButtonStroke.Parent = CloseButton
+CloseButtonStroke.Color = Color3.fromRGB(120, 40, 40)
+CloseButtonStroke.Thickness = 1.5
 
 -- 创建左侧导航栏
 NavigationFrame.Name = "NavigationFrame"
 NavigationFrame.Parent = Frame
-NavigationFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-NavigationFrame.Position = UDim2.new(0, 10, 0, 70)
-NavigationFrame.Size = UDim2.new(0, 80, 0, 250)
+NavigationFrame.BackgroundColor3 = ColorPalette.Secondary
+NavigationFrame.Position = UDim2.new(0, 15, 0, 80)
+NavigationFrame.Size = UDim2.new(0, 90, 0, 310) -- 高度增加以适应更多按钮
 
 -- 导航栏圆角
 NavigationCorner.Parent = NavigationFrame
-NavigationCorner.CornerRadius = UDim.new(0, 8)
+NavigationCorner.CornerRadius = UDim.new(0, 10)
+
+-- 导航栏渐变
+NavigationGradient.Name = "NavigationGradient"
+NavigationGradient.Parent = NavigationFrame
+NavigationGradient.Color = GradientPresets.DarkTheme
 
 -- 导航栏描边
 NavigationStroke.Parent = NavigationFrame
-NavigationStroke.Color = Color3.fromRGB(60, 60, 60)
+NavigationStroke.Color = Color3.fromRGB(70, 70, 90)
 NavigationStroke.Thickness = 2
+NavigationStroke.LineJoinMode = Enum.LineJoinMode.Round
 
--- 创建导航按钮函数
-local function createNavButton(name, text, positionY)
+-- 创建高级导航按钮函数
+local function createAdvancedNavButton(name, text, positionY)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Parent = NavigationFrame
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
     button.Position = UDim2.new(0.1, 0, positionY, 0)
-    button.Size = UDim2.new(0.8, 0, 0, 35)
-    button.Font = Enum.Font.Gotham
+    button.Size = UDim2.new(0.8, 0, 0, 32) -- 稍微减小高度以适应更多按钮
+    button.Font = FontPresets.Body
     button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextColor3 = ColorPalette.Text
     button.TextSize = 12
     button.TextWrapped = true
+    button.AutoButtonColor = false
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Name = name .. "Gradient"
+    gradient.Parent = button
+    gradient.Color = GradientPresets.DarkTheme
     
     local corner = Instance.new("UICorner")
     corner.Parent = button
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0, 8)
     
     local stroke = Instance.new("UIStroke")
     stroke.Parent = button
-    stroke.Color = Color3.fromRGB(80, 80, 80)
+    stroke.Color = Color3.fromRGB(90, 90, 110)
     stroke.Thickness = 1.5
     
-    return button
+    -- 悬停效果
+    button.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(
+            button,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundColor3 = Color3.fromRGB(70, 70, 90)}
+        ):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(
+            button,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundColor3 = Color3.fromRGB(50, 50, 65)}
+        ):Play()
+    end)
+    
+    return button, gradient
 end
 
 -- 创建导航按钮
-ScriptInfoButton = createNavButton("ScriptInfoButton", "脚本信息", 0.03)
-DeveloperButton = createNavButton("DeveloperButton", "开发人员", 0.18)
-GeneralButton = createNavButton("GeneralButton", "通用", 0.33)
-FEButton = createNavButton("FEButton", "FE", 0.48)
-ESPButton = createNavButton("ESPButton", "ESP", 0.63)
-BlindFireButton = createNavButton("BlindFireButton", "盲射", 0.78)
+ScriptInfoButton, ScriptInfoButtonGradient = createAdvancedNavButton("ScriptInfoButton", "📜 脚本信息", 0.02)
+DeveloperButton, DeveloperButtonGradient = createAdvancedNavButton("DeveloperButton", "👨‍💻 开发人员", 0.13)
+GeneralButton, GeneralButtonGradient = createAdvancedNavButton("GeneralButton", "⚙️ 通用", 0.24)
+FEButton, FEButtonGradient = createAdvancedNavButton("FEButton", "🎮 FE", 0.35)
+ESPButton, ESPButtonGradient = createAdvancedNavButton("ESPButton", "👁️ ESP", 0.46)
+BlindFireButton, BlindFireButtonGradient = createAdvancedNavButton("BlindFireButton", "🎯 盲射", 0.57)
+AOTUButton, AOTUButtonGradient = createAdvancedNavButton("AOTUButton", "🎮 凹凸世界", 0.68)
+BoxingButton, BoxingButtonGradient = createAdvancedNavButton("BoxingButton", "🥊 拳击模拟器", 0.79)
 
 -- 创建右侧脚本容器
 ScriptsContainer.Name = "ScriptsContainer"
 ScriptsContainer.Parent = Frame
-ScriptsContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-ScriptsContainer.Position = UDim2.new(0, 100, 0, 70)
-ScriptsContainer.Size = UDim2.new(0, 280, 0, 250)
+ScriptsContainer.BackgroundColor3 = ColorPalette.Secondary
+ScriptsContainer.Position = UDim2.new(0, 115, 0, 80)
+ScriptsContainer.Size = UDim2.new(0, 285, 0, 310) -- 高度增加
 ScriptsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScriptsContainer.ScrollBarThickness = 8
-ScriptsContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+ScriptsContainer.ScrollBarThickness = 10
+ScriptsContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
+ScriptsContainer.ScrollBarImageTransparency = 0.5
 
 -- 容器圆角
 ContainerCorner.Parent = ScriptsContainer
-ContainerCorner.CornerRadius = UDim.new(0, 8)
+ContainerCorner.CornerRadius = UDim.new(0, 10)
+
+-- 容器渐变
+ContainerGradient.Name = "ContainerGradient"
+ContainerGradient.Parent = ScriptsContainer
+ContainerGradient.Color = GradientPresets.DarkTheme
 
 -- 容器描边
 ContainerStroke.Parent = ScriptsContainer
-ContainerStroke.Color = Color3.fromRGB(60, 60, 60)
+ContainerStroke.Color = Color3.fromRGB(70, 70, 90)
 ContainerStroke.Thickness = 2
+ContainerStroke.LineJoinMode = Enum.LineJoinMode.Round
 
 -- 布局和间距
 UIListLayout.Parent = ScriptsContainer
@@ -262,37 +427,61 @@ UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 8)
 
 UIPadding.Parent = ScriptsContainer
-UIPadding.PaddingTop = UDim.new(0, 10)
-UIPadding.PaddingLeft = UDim.new(0, 10)
-UIPadding.PaddingRight = UDim.new(0, 10)
+UIPadding.PaddingTop = UDim.new(0, 12)
+UIPadding.PaddingLeft = UDim.new(0, 12)
+UIPadding.PaddingRight = UDim.new(0, 12)
 
--- 创建彩色文本标签函数
-local function createColorTextLabel(text, sizeY)
+-- 创建高级彩色文本标签函数
+local function createAdvancedColorTextLabel(text, sizeY)
+    local frame = Instance.new("Frame")
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    frame.BackgroundTransparency = 0.2
+    frame.Size = UDim2.new(1, -24, 0, sizeY)
+    frame.LayoutOrder = #ScriptsContainer:GetChildren()
+    
+    local corner = Instance.new("UICorner")
+    corner.Parent = frame
+    corner.CornerRadius = UDim.new(0, 8)
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Parent = frame
+    stroke.Color = Color3.fromRGB(90, 90, 110)
+    stroke.Thickness = 1.5
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Parent = frame
+    gradient.Color = GradientPresets.DarkTheme
+    gradient.Transparency = NumberSequence.new(0.2)
+    
     local label = Instance.new("TextLabel")
+    label.Name = "TextLabel"
+    label.Parent = frame
     label.BackgroundTransparency = 1
-    label.Size = UDim2.new(1, -20, 0, sizeY)
-    label.Font = Enum.Font.Gotham
+    label.Size = UDim2.new(1, -16, 1, -16)
+    label.Position = UDim2.new(0, 8, 0, 8)
+    label.Font = FontPresets.Body
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextColor3 = ColorPalette.Text -- 使用更亮的颜色
     label.TextSize = 14
     label.TextWrapped = true
-    label.LayoutOrder = #ScriptsContainer:GetChildren()
     label.TextYAlignment = Enum.TextYAlignment.Top
+    label.RichText = true
     
     local textStroke = Instance.new("UIStroke")
     textStroke.Parent = label
     textStroke.Color = Color3.fromRGB(255, 0, 0)
-    textStroke.Thickness = 1.5
+    textStroke.Thickness = 1.2
     textStroke.LineJoinMode = Enum.LineJoinMode.Round
+    textStroke.Transparency = 0.3
     
     -- 彩虹动画
     spawn(function()
-        while label.Parent do
+        while frame.Parent do
             for i = 1, #colorSequence.Keypoints do
                 local nextIndex = i % #colorSequence.Keypoints + 1
                 local tweenInfo = TweenInfo.new(
-                    0.5,
-                    Enum.EasingStyle.Linear,
+                    0.6,
+                    Enum.EasingStyle.Sine,
                     Enum.EasingDirection.InOut
                 )
                 local tween = game:GetService("TweenService"):Create(
@@ -306,20 +495,18 @@ local function createColorTextLabel(text, sizeY)
         end
     end)
     
-    return label
+    return frame
 end
 
--- 创建开关按钮函数
-local function createToggleButton(name, state)
+-- 创建高级开关按钮函数
+local function createAdvancedToggleButton(state)
     local button = Instance.new("TextButton")
-    button.Name = name
-    button.BackgroundColor3 = state and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
-    button.Size = UDim2.new(0, 60, 0, 25)
-    button.Font = Enum.Font.Gotham
-    button.Text = state and "开启" or "关闭"
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 12
-    button.LayoutOrder = #ScriptsContainer:GetChildren()
+    button.BackgroundColor3 = state and ColorPalette.Success or ColorPalette.Danger
+    button.Size = UDim2.new(0, 65, 0, 28)
+    button.Font = FontPresets.Body
+    button.Text = state and "🟢 ON" or "🔴 OFF"
+    button.TextColor3 = ColorPalette.Text
+    button.TextSize = 13
     
     local corner = Instance.new("UICorner")
     corner.Parent = button
@@ -327,55 +514,117 @@ local function createToggleButton(name, state)
     
     local stroke = Instance.new("UIStroke")
     stroke.Parent = button
-    stroke.Color = Color3.fromRGB(80, 80, 80)
+    stroke.Color = Color3.fromRGB(80, 80, 100)
     stroke.Thickness = 1.5
     
-    return button
+    local gradient = Instance.new("UIGradient")
+    gradient.Parent = button
+    gradient.Color = state and GradientPresets.GreenCyan or GradientPresets.OrangeRed
+    
+    -- 悬停效果
+    button.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(
+            button,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 68, 0, 30)}
+        ):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(
+            button,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 65, 0, 28)}
+        ):Play()
+    end)
+    
+    return button, gradient
 end
 
--- 创建功能行函数
-local function createFeatureRow(name, hasToggle, toggleState, callback)
+-- 创建高级功能行函数
+local function createAdvancedFeatureRow(name, hasToggle, toggleState, callback)
     local frame = Instance.new("Frame")
-    frame.BackgroundTransparency = 1
-    frame.Size = UDim2.new(1, -20, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    frame.BackgroundTransparency = 0.1
+    frame.Size = UDim2.new(1, -24, 0, 42)
     frame.LayoutOrder = #ScriptsContainer:GetChildren()
+    
+    local corner = Instance.new("UICorner")
+    corner.Parent = frame
+    corner.CornerRadius = UDim.new(0, 8)
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Parent = frame
+    stroke.Color = Color3.fromRGB(80, 80, 100)
+    stroke.Thickness = 1.5
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Parent = frame
+    gradient.Color = GradientPresets.DarkTheme
     
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Name = "NameLabel"
     nameLabel.Parent = frame
     nameLabel.BackgroundTransparency = 1
-    nameLabel.Position = UDim2.new(0, 0, 0, 0)
-    nameLabel.Size = hasToggle and UDim2.new(0.7, 0, 1, 0) or UDim2.new(1, 0, 1, 0)
-    nameLabel.Font = Enum.Font.Gotham
+    nameLabel.Position = UDim2.new(0, 12, 0, 0)
+    nameLabel.Size = hasToggle and UDim2.new(0.7, 0, 1, 0) or UDim2.new(1, -24, 1, 0)
+    nameLabel.Font = FontPresets.Body
     nameLabel.Text = name
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextColor3 = ColorPalette.Text -- 使用更亮的颜色
     nameLabel.TextSize = 14
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     
+    -- 文字发光效果
+    local nameGlow = Instance.new("UIStroke")
+    nameGlow.Parent = nameLabel
+    nameGlow.Color = Color3.fromRGB(100, 100, 150)
+    nameGlow.Thickness = 1
+    nameGlow.Transparency = 0.7
+    
     if hasToggle then
-        local toggleButton = createToggleButton(name .. "Toggle", toggleState)
+        local toggleButton, toggleGradient = createAdvancedToggleButton(toggleState)
         toggleButton.Parent = frame
         toggleButton.Position = UDim2.new(0.75, 0, 0.25, 0)
         
         toggleButton.MouseButton1Click:Connect(function()
             local newState = not toggleState
             toggleState = newState
-            toggleButton.BackgroundColor3 = newState and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
-            toggleButton.Text = newState and "开启" or "关闭"
+            toggleButton.BackgroundColor3 = newState and ColorPalette.Success or ColorPalette.Danger
+            toggleButton.Text = newState and "🟢 ON" or "🔴 OFF"
+            toggleGradient.Color = newState and GradientPresets.GreenCyan or GradientPresets.OrangeRed
             
             if callback then
                 callback(newState)
             end
         end)
+        
+        return frame, toggleState
     else
+        -- 悬停效果
+        frame.MouseEnter:Connect(function()
+            game:GetService("TweenService"):Create(
+                frame,
+                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {BackgroundColor3 = Color3.fromRGB(55, 55, 75)}
+            ):Play()
+        end)
+        
+        frame.MouseLeave:Connect(function()
+            game:GetService("TweenService"):Create(
+                frame,
+                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {BackgroundColor3 = Color3.fromRGB(45, 45, 60)}
+            ):Play()
+        end)
+        
         frame.MouseButton1Click:Connect(function()
             if callback then
                 callback()
             end
         end)
+        
+        return frame
     end
-    
-    return frame, toggleState
 end
 
 -- 无限跳功能
@@ -389,7 +638,6 @@ local function toggleInfiniteJump(state)
                 player.Character.Humanoid:ChangeState("Jumping")
             end
         end)
-        -- 存储连接以便关闭
         toggleInfiniteJump.connection = connection
     else
         if toggleInfiniteJump.connection then
@@ -440,22 +688,499 @@ local function toggleMapWallhack()
     end
 end
 
--- 无敌少侠飞行功能
+-- 飞行脚本功能
 local function executeFlightScript()
-    loadstring(game:HttpGet("https://gist.githubusercontent.com/JungleScripts/775c6366d91d39fe2633c5805a1d0c23/raw/c8de949402393510a27bcf4482c957b6c3bed2c2/gistfile1.txt"))()
+    local main = Instance.new("ScreenGui")
+    local Frame = Instance.new("Frame")
+    local up = Instance.new("TextButton")
+    local down = Instance.new("TextButton")
+    local onof = Instance.new("TextButton")
+    local TextLabel = Instance.new("TextLabel")
+    local plus = Instance.new("TextButton")
+    local speed = Instance.new("TextLabel")
+    local mine = Instance.new("TextButton")
+    local closebutton = Instance.new("TextButton")
+    local mini = Instance.new("TextButton")
+    local mini2 = Instance.new("TextButton")
+
+    main.Name = "main"
+    main.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    main.ResetOnSpawn = false
+
+    Frame.Parent = main
+    Frame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
+    Frame.BorderColor3 = Color3.fromRGB(103, 221, 213)
+    Frame.Position = UDim2.new(0.100320168, 0, 0.379746825, 0)
+    Frame.Size = UDim2.new(0, 190, 0, 57)
+
+    up.Name = "up"
+    up.Parent = Frame
+    up.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
+    up.Size = UDim2.new(0, 44, 0, 28)
+    up.Font = Enum.Font.SourceSans
+    up.Text = "上升"
+    up.TextColor3 = Color3.fromRGB(0, 0, 0)
+    up.TextSize = 14.000
+
+    down.Name = "down"
+    down.Parent = Frame
+    down.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
+    down.Position = UDim2.new(0, 0, 0.491228074, 0)
+    down.Size = UDim2.new(0, 44, 0, 28)
+    down.Font = Enum.Font.SourceSans
+    down.Text = "下降"
+    down.TextColor3 = Color3.fromRGB(0, 0, 0)
+    down.TextSize = 14.000
+
+    onof.Name = "onof"
+    onof.Parent = Frame
+    onof.BackgroundColor3 = Color3.fromRGB(255, 249, 74)
+    onof.Position = UDim2.new(0.702823281, 0, 0.491228074, 0)
+    onof.Size = UDim2.new(0, 56, 0, 28)
+    onof.Font = Enum.Font.SourceSans
+    onof.Text = "飞行(GO)"
+    onof.TextColor3 = Color3.fromRGB(0, 0, 0)
+    onof.TextSize = 14.000
+
+    TextLabel.Parent = Frame
+    TextLabel.BackgroundColor3 = Color3.fromRGB(242, 60, 255)
+    TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
+    TextLabel.Size = UDim2.new(0, 100, 0, 28)
+    TextLabel.Font = Enum.Font.SourceSans
+    TextLabel.Text = "NZ Script Center"
+    TextLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+    TextLabel.TextScaled = true
+    TextLabel.TextSize = 14.000
+    TextLabel.TextWrapped = true
+
+    plus.Name = "plus"
+    plus.Parent = Frame
+    plus.BackgroundColor3 = Color3.fromRGB(133, 145, 255)
+    plus.Position = UDim2.new(0.231578946, 0, 0, 0)
+    plus.Size = UDim2.new(0, 45, 0, 28)
+    plus.Font = Enum.Font.SourceSans
+    plus.Text = "飞行速度+1"
+    plus.TextColor3 = Color3.fromRGB(0, 0, 0)
+    plus.TextScaled = true
+    plus.TextSize = 14.000
+    plus.TextWrapped = true
+
+    speed.Name = "speed"
+    speed.Parent = Frame
+    speed.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+    speed.Position = UDim2.new(0.468421042, 0, 0.491228074, 0)
+    speed.Size = UDim2.new(0, 44, 0, 28)
+    speed.Font = Enum.Font.SourceSans
+    speed.Text = "1"
+    speed.TextColor3 = Color3.fromRGB(0, 0, 0)
+    speed.TextScaled = true
+    speed.TextSize = 14.000
+    speed.TextWrapped = true
+
+    mine.Name = "mine"
+    mine.Parent = Frame
+    mine.BackgroundColor3 = Color3.fromRGB(123, 255, 247)
+    mine.Position = UDim2.new(0.231578946, 0, 0.491228074, 0)
+    mine.Size = UDim2.new(0, 45, 0, 29)
+    mine.Font = Enum.Font.SourceSans
+    mine.Text = "飞行速度-1"
+    mine.TextColor3 = Color3.fromRGB(0, 0, 0)
+    mine.TextScaled = true
+    mine.TextSize = 14.000
+    mine.TextWrapped = true
+
+    closebutton.Name = "Close"
+    closebutton.Parent = main.Frame
+    closebutton.BackgroundColor3 = Color3.fromRGB(225, 25, 0)
+    closebutton.Font = "SourceSans"
+    closebutton.Size = UDim2.new(0, 45, 0, 28)
+    closebutton.Text = "关闭"
+    closebutton.TextSize = 30
+    closebutton.Position =  UDim2.new(0, 0, -1, 27)
+
+    mini.Name = "minimize"
+    mini.Parent = main.Frame
+    mini.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+    mini.Font = "SourceSans"
+    mini.Size = UDim2.new(0, 45, 0, 28)
+    mini.Text = "折叠"
+    mini.TextSize = 30
+    mini.Position = UDim2.new(0, 44, -1, 27)
+
+    mini2.Name = "minimize2"
+    mini2.Parent = main.Frame
+    mini2.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+    mini2.Font = "SourceSans"
+    mini2.Size = UDim2.new(0, 45, 0, 28)
+    mini2.Text = "展开"
+    mini2.TextSize = 30
+    mini2.Position = UDim2.new(0, 44, -1, 57)
+    mini2.Visible = false
+
+    local speeds = 1
+
+    local speaker = game:GetService("Players").LocalPlayer
+
+    local chr = game.Players.LocalPlayer.Character
+    local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+
+    local nowe = false
+
+    game:GetService("StarterGui"):SetCore("SendNotification", { 
+        Title = "Fly GUI V3";
+        Text = "By me_ozone and Quandale The Dinglish XII#3550";
+        Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
+    Duration = 5;
+
+    Frame.Active = true -- main = gui
+    Frame.Draggable = true
+
+    onof.MouseButton1Down:connect(function()
+
+        if nowe == true then
+            nowe = false
+
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,true)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,true)
+            speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+        else 
+            nowe = true
+
+
+
+            for i = 1, speeds do
+                spawn(function()
+
+                    local hb = game:GetService("RunService").Heartbeat	
+
+
+                    local tpwalking = true
+                    local chr = game.Players.LocalPlayer.Character
+                    local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                    while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                        if hum.MoveDirection.Magnitude > 0 then
+                            chr:TranslateBy(hum.MoveDirection)
+                        end
+                    end
+
+                end)
+            end
+            game.Players.LocalPlayer.Character.Animate.Disabled = true
+            local Char = game.Players.LocalPlayer.Character
+            local Hum = Char:FindFirstChildOfClass("Humanoid") or Char:FindFirstChildOfClass("AnimationController")
+
+            for i,v in next, Hum:GetPlayingAnimationTracks() do
+                v:AdjustSpeed(0)
+            end
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,false)
+            speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
+            speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+        end
+
+
+
+
+        if game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R6 then
+
+
+
+            local plr = game.Players.LocalPlayer
+            local torso = plr.Character.Torso
+            local flying = true
+            local deb = true
+            local ctrl = {f = 0, b = 0, l = 0, r = 0}
+            local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+            local maxspeed = 50
+            local speed = 0
+
+
+            local bg = Instance.new("BodyGyro", torso)
+            bg.P = 9e4
+            bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+            bg.cframe = torso.CFrame
+            local bv = Instance.new("BodyVelocity", torso)
+            bv.velocity = Vector3.new(0,0.1,0)
+            bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+            if nowe == true then
+                plr.Character.Humanoid.PlatformStand = true
+            end
+            while nowe == true or game:GetService("Players").LocalPlayer.Character.Humanoid.Health == 0 do
+                game:GetService("RunService").RenderStepped:Wait()
+
+                if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                    speed = speed+.5+(speed/maxspeed)
+                    if speed > maxspeed then
+                        speed = maxspeed
+                    end
+                elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
+                    speed = speed-1
+                    if speed < 0 then
+                        speed = 0
+                    end
+                end
+                if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                    bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f+ctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                    lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+                elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+                    bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                else
+                    bv.velocity = Vector3.new(0,0,0)
+                end
+                --	game.Players.LocalPlayer.Character.Animate.Disabled = true
+                bg.cframe = game.Workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*speed/maxspeed),0,0)
+            end
+            ctrl = {f = 0, b = 0, l = 0, r = 0}
+            lastctrl = {f = 0, b = 0, l = 0, r = 0}
+            speed = 0
+            bg:Destroy()
+            bv:Destroy()
+            plr.Character.Humanoid.PlatformStand = false
+            game.Players.LocalPlayer.Character.Animate.Disabled = false
+            tpwalking = false
+
+
+
+
+        else
+            local plr = game.Players.LocalPlayer
+            local UpperTorso = plr.Character.UpperTorso
+            local flying = true
+            local deb = true
+            local ctrl = {f = 0, b = 0, l = 0, r = 0}
+            local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+            local maxspeed = 50
+            local speed = 0
+
+
+            local bg = Instance.new("BodyGyro", UpperTorso)
+            bg.P = 9e4
+            bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+            bg.cframe = UpperTorso.CFrame
+            local bv = Instance.new("BodyVelocity", UpperTorso)
+            bv.velocity = Vector3.new(0,0.1,0)
+            bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+            if nowe == true then
+                plr.Character.Humanoid.PlatformStand = true
+            end
+            while nowe == true or game:GetService("Players").LocalPlayer.Character.Humanoid.Health == 0 do
+                wait()
+
+                if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                    speed = speed+.5+(speed/maxspeed)
+                    if speed > maxspeed then
+                        speed = maxspeed
+                    end
+                elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
+                    speed = speed-1
+                    if speed < 0 then
+                        speed = 0
+                    end
+                end
+                if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                    bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f+ctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                    lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+                elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+                    bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                else
+                    bv.velocity = Vector3.new(0,0,0)
+                end
+
+                bg.cframe = game.Workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*speed/maxspeed),0,0)
+            end
+            ctrl = {f = 0, b = 0, l = 0, r = 0}
+            lastctrl = {f = 0, b = 0, l = 0, r = 0}
+            speed = 0
+            bg:Destroy()
+            bv:Destroy()
+            plr.Character.Humanoid.PlatformStand = false
+            game.Players.LocalPlayer.Character.Animate.Disabled = false
+            tpwalking = false
+
+
+
+        end
+
+
+
+
+
+    end)
+
+    local tis
+
+    up.MouseButton1Down:connect(function()
+        tis = up.MouseEnter:connect(function()
+            while tis do
+                wait()
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,1,0)
+            end
+        end)
+    end)
+
+    up.MouseLeave:connect(function()
+        if tis then
+            tis:Disconnect()
+            tis = nil
+        end
+    end)
+
+    local dis
+
+    down.MouseButton1Down:connect(function()
+        dis = down.MouseEnter:connect(function()
+            while dis do
+                wait()
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,-1,0)
+            end
+        end)
+    end)
+
+    down.MouseLeave:connect(function()
+        if dis then
+            dis:Disconnect()
+            dis = nil
+        end
+    end)
+
+
+    game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(char)
+        wait(0.7)
+        game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false
+        game.Players.LocalPlayer.Character.Animate.Disabled = false
+
+    end)
+
+
+    plus.MouseButton1Down:connect(function()
+        speeds = speeds + 1
+        speed.Text = speeds
+        if nowe == true then
+
+
+            local tpwalking = false
+            for i = 1, speeds do
+                spawn(function()
+
+                    local hb = game:GetService("RunService").Heartbeat	
+
+
+                    tpwalking = true
+                    local chr = game.Players.LocalPlayer.Character
+                    local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                    while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                        if hum.MoveDirection.Magnitude > 0 then
+                            chr:TranslateBy(hum.MoveDirection)
+                        end
+                    end
+
+                end)
+            end
+        end
+    end)
+    mine.MouseButton1Down:connect(function()
+        if speeds == 1 then
+            speed.Text = '飞行速度不可低于1'
+            wait(1)
+            speed.Text = speeds
+        else
+            speeds = speeds - 1
+            speed.Text = speeds
+            if nowe == true then
+                local tpwalking = false
+                for i = 1, speeds do
+                    spawn(function()
+
+                        local hb = game:GetService("RunService").Heartbeat	
+
+
+                        tpwalking = true
+                        local chr = game.Players.LocalPlayer.Character
+                        local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                        while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                            if hum.MoveDirection.Magnitude > 0 then
+                                chr:TranslateBy(hum.MoveDirection)
+                            end
+                        end
+
+                    end)
+                end
+            end
+        end
+    end)
+
+    closebutton.MouseButton1Click:Connect(function()
+        main:Destroy()
+    end)
+
+    mini.MouseButton1Click:Connect(function()
+        up.Visible = false
+        down.Visible = false
+        onof.Visible = false
+        plus.Visible = false
+        speed.Visible = false
+        mine.Visible = false
+        mini.Visible = false
+        mini2.Visible = true
+        main.Frame.BackgroundTransparency = 1
+        closebutton.Position =  UDim2.new(0, 0, -1, 57)
+    end)
+
+    mini2.MouseButton1Click:Connect(function()
+        up.Visible = true
+        down.Visible = true
+        onof.Visible = true
+        plus.Visible = true
+        speed.Visible = true
+        mine.Visible = true
+        mini.Visible = true
+        mini2.Visible = false
+        main.Frame.BackgroundTransparency = 0 
+        closebutton.Position =  UDim2.new(0, 0, -1, 27)
+    end)
     
-    -- 创建提示框
+    -- 创建高级通知
     local notification = Instance.new("Frame")
     notification.Name = "FlightNotification"
     notification.Parent = ScreenGui
-    notification.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
-    notification.Size = UDim2.new(0, 200, 0, 60)
-    notification.Position = UDim2.new(1, -220, 1, -80)
+    notification.BackgroundColor3 = ColorPalette.Primary
+    notification.Size = UDim2.new(0, 220, 0, 70)
+    notification.Position = UDim2.new(1, -240, 1, -90)
     notification.ZIndex = 100
     
     local notificationCorner = Instance.new("UICorner")
     notificationCorner.Parent = notification
-    notificationCorner.CornerRadius = UDim.new(0, 8)
+    notificationCorner.CornerRadius = UDim.new(0, 12)
+    
+    local notificationGradient = Instance.new("UIGradient")
+    notificationGradient.Parent = notification
+    notificationGradient.Color = GradientPresets.GreenCyan
     
     local notificationStroke = Instance.new("UIStroke")
     notificationStroke.Parent = notification
@@ -470,7 +1195,7 @@ local function executeFlightScript()
                 local nextIndex = i % #colorSequence.Keypoints + 1
                 local tweenInfo = TweenInfo.new(
                     0.5,
-                    Enum.EasingStyle.Linear,
+                    Enum.EasingStyle.Sine,
                     Enum.EasingDirection.InOut
                 )
                 local tween = game:GetService("TweenService"):Create(
@@ -484,37 +1209,52 @@ local function executeFlightScript()
         end
     end)
     
+    local icon = Instance.new("TextLabel")
+    icon.Parent = notification
+    icon.BackgroundTransparency = 1
+    icon.Size = UDim2.new(0, 40, 1, 0)
+    icon.Font = Enum.Font.GothamBold
+    icon.Text = "🚀"
+    icon.TextColor3 = ColorPalette.Text
+    icon.TextSize = 24
+    
     local textLabel = Instance.new("TextLabel")
     textLabel.Parent = notification
     textLabel.BackgroundTransparency = 1
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.Text = "飞行脚本已执行!"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.Position = UDim2.new(0, 45, 0, 0)
+    textLabel.Size = UDim2.new(1, -45, 1, 0)
+    textLabel.Font = FontPresets.Header
+    textLabel.Text = "飞行脚本已激活!"
+    textLabel.TextColor3 = ColorPalette.Text
     textLabel.TextSize = 16
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
     
+    -- 淡出动画
     wait(3)
+    game:GetService("TweenService"):Create(
+        notification,
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {BackgroundTransparency = 1}
+    ):Play()
+    wait(0.5)
     notification:Destroy()
 end
 
 -- 高亮显示敌人功能
 local function toggleHighlightEnemy(state)
     highlightEnemyEnabled = state
-    -- 这里应该实现高亮敌人的逻辑
     print("高亮显示敌人: " .. (state and "开启" or "关闭"))
 end
 
 -- 队伍检测功能
 local function toggleTeamCheck(state)
     teamCheckEnabled = state
-    -- 这里应该实现队伍检测的逻辑
     print("队伍检测: " .. (state and "开启" or "关闭"))
 end
 
 -- 显示碰撞箱功能
 local function toggleShowHitbox(state)
     showHitboxEnabled = state
-    -- 这里应该实现显示碰撞箱的逻辑
     print("显示碰撞箱: " .. (state and "开启" or "关闭"))
 end
 
@@ -524,18 +1264,17 @@ local function toggleAntiHit(state)
     if state then
         local player = game:GetService("Players").LocalPlayer
         if player.Character then
-            -- 创建碰撞箱在脚下
             local hitbox = Instance.new("Part")
             hitbox.Name = "AntiHitHitbox"
             hitbox.Size = Vector3.new(5, 1, 5)
             hitbox.Position = player.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
             hitbox.Transparency = 0.7
             hitbox.Color = Color3.fromRGB(255, 0, 0)
+            hitbox.Material = EnumMaterial.Neon
             hitbox.Anchored = true
             hitbox.CanCollide = true
             hitbox.Parent = workspace
             
-            -- 跟随玩家
             spawn(function()
                 while antiHitEnabled and player.Character do
                     hitbox.Position = player.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
@@ -545,7 +1284,6 @@ local function toggleAntiHit(state)
             end)
         end
     else
-        -- 移除碰撞箱
         local hitbox = workspace:FindFirstChild("AntiHitHitbox")
         if hitbox then
             hitbox:Destroy()
@@ -556,113 +1294,182 @@ end
 -- 透视功能
 local function toggleEnemyHitbox(state)
     enemyHitboxEnabled = state
-    -- 这里应该实现显示敌人碰撞箱的逻辑
     print("敌人碰撞箱透视: " .. (state and "开启" or "关闭"))
+end
+
+-- 自动拾取裁判球功能
+local function toggleAutoCollectBall(state)
+    autoCollectBallEnabled = state
+    if state then
+        if autoCollectThread then
+            autoCollectThread:Disconnect()
+            autoCollectThread = nil
+        end
+        
+        autoCollectThread = game:GetService("RunService").Heartbeat:Connect(function()
+            local args = {
+                2,
+                {
+                    1,
+                    1,
+                    19
+                }
+            }
+            local success, err = pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("Project"):WaitForChild("RemoteEvent"):WaitForChild("ControlMessageEvent"):FireServer(unpack(args))
+            end)
+            if not success then
+                warn("自动拾取裁判球错误: " .. err)
+            end
+        end)
+    else
+        if autoCollectThread then
+            autoCollectThread:Disconnect()
+            autoCollectThread = nil
+        end
+    end
+end
+
+-- 自动挥拳功能
+local function toggleAutoPunch(state)
+    autoPunchEnabled = state
+    if state then
+        if autoPunchThread then
+            autoPunchThread:Disconnect()
+            autoPunchThread = nil
+        end
+        
+        autoPunchThread = game:GetService("RunService").Heartbeat:Connect(function()
+            local args = {
+                {"Activate_Punch"}
+            }
+            local success, err = pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent"):FireServer(unpack(args))
+            end)
+            if not success then
+                warn("自动挥拳错误: " .. err)
+            end
+        end)
+    else
+        if autoPunchThread then
+            autoPunchThread:Disconnect()
+            autoPunchThread = nil
+        end
+    end
 end
 
 -- 加载指定类型的脚本
 local function loadCategory(category)
-    -- 清除当前内容
     for _, child in ipairs(ScriptsContainer:GetChildren()) do
-        if child:IsA("TextLabel") or child:IsA("Frame") then
+        if child:IsA("Frame") then
             child:Destroy()
         end
     end
     
-    local totalHeight = 10
+    local totalHeight = 12
     
     if category == "ScriptInfo" then
-        -- 脚本信息
-        local infoText = createColorTextLabel("本脚本永远公益，请多多宣传\n请进入交流群🐧群号：445825485", 80)
+        local infoText = createAdvancedColorTextLabel("<font color='#FF6B9D'>📜 本脚本永远公益，请多多宣传</font>\n\n<font color='#4FC3F7'>💬 请进入交流群 🐧</font>\n<font color='#FFD740'>群号：445825485</font>\n\n<font color='#69F0AE'>✨ 感谢您的使用与支持！</font>", 120)
         infoText.Parent = ScriptsContainer
-        totalHeight = totalHeight + 90
-    elseif category == "Developer" then
-        -- 开发人员
-        local devText = createColorTextLabel("主作者：南烛\n副作者：深拥情话梦一场\n代理：逍遥\n         孙笑川\n           以后", 120)
-        devText.Parent = ScriptsContainer
         totalHeight = totalHeight + 130
+    elseif category == "Developer" then
+        local devText = createAdvancedColorTextLabel("<font color='#FF8A65'>👑 主作者：南烛</font>\n\n<font color='#64FFDA'>👨‍💻 副作者：深拥情话梦一场</font>\n\n<font color='#FFD740'>🤝 代理：逍遥</font>\n<font color='#FFD740'>         孙笑川</font>\n<font color='#FFD740'>           以后</font>", 150)
+        devText.Parent = ScriptsContainer
+        totalHeight = totalHeight + 160
     elseif category == "General" then
-        -- 通用功能
-        local infiniteJumpRow, infiniteJumpState = createFeatureRow("无限跳", true, infiniteJumpEnabled, toggleInfiniteJump)
+        local infiniteJumpRow, infiniteJumpState = createAdvancedFeatureRow("🦘 无限跳", true, infiniteJumpEnabled, toggleInfiniteJump)
         infiniteJumpRow.Parent = ScriptsContainer
         infiniteJumpEnabled = infiniteJumpState
         totalHeight = totalHeight + 50
         
-        local fogRemoverRow, fogRemoverState = createFeatureRow("一键去雾", true, fogRemoverEnabled, toggleFogRemover)
+        local fogRemoverRow, fogRemoverState = createAdvancedFeatureRow("🌫️ 一键去雾", true, fogRemoverEnabled, toggleFogRemover)
         fogRemoverRow.Parent = ScriptsContainer
         fogRemoverEnabled = fogRemoverState
         totalHeight = totalHeight + 50
         
-        local nightVisionRow, nightVisionState = createFeatureRow("夜视", true, nightVisionEnabled, toggleNightVision)
+        local nightVisionRow, nightVisionState = createAdvancedFeatureRow("🌙 夜视", true, nightVisionEnabled, toggleNightVision)
         nightVisionRow.Parent = ScriptsContainer
         nightVisionEnabled = nightVisionState
         totalHeight = totalHeight + 50
         
-        local mapWallhackRow = createFeatureRow("地图透视", false, false, toggleMapWallhack)
+        local mapWallhackRow = createAdvancedFeatureRow("👁️ 地图透视", false, false, toggleMapWallhack)
         mapWallhackRow.Parent = ScriptsContainer
         totalHeight = totalHeight + 50
         
-        local flightRow = createFeatureRow("无敌少侠飞行", false, false, executeFlightScript)
+        local flightRow = createAdvancedFeatureRow("🚀 飞行", false, false, executeFlightScript)
         flightRow.Parent = ScriptsContainer
         totalHeight = totalHeight + 50
     elseif category == "FE" then
-        -- FE功能（暂未实现）
-        local feText = createColorTextLabel("FE功能开发中...", 40)
+        local feText = createAdvancedColorTextLabel("🎮 <font color='#FF9800'>FE 功能开发中...</font>\n\n<font color='#B39DDB'>敬请期待后续更新！</font>", 80)
         feText.Parent = ScriptsContainer
-        totalHeight = totalHeight + 50
+        totalHeight = totalHeight + 90
     elseif category == "ESP" then
-        -- ESP功能
-        local highlightEnemyRow, highlightEnemyState = createFeatureRow("高亮显示敌人", true, highlightEnemyEnabled, toggleHighlightEnemy)
+        local highlightEnemyRow, highlightEnemyState = createAdvancedFeatureRow("👁️ 高亮显示敌人", true, highlightEnemyEnabled, toggleHighlightEnemy)
         highlightEnemyRow.Parent = ScriptsContainer
         highlightEnemyEnabled = highlightEnemyState
         totalHeight = totalHeight + 50
         
-        local teamCheckRow, teamCheckState = createFeatureRow("队伍检测", true, teamCheckEnabled, toggleTeamCheck)
+        local teamCheckRow, teamCheckState = createAdvancedFeatureRow("🎯 队伍检测", true, teamCheckEnabled, toggleTeamCheck)
         teamCheckRow.Parent = ScriptsContainer
         teamCheckEnabled = teamCheckState
         totalHeight = totalHeight + 50
         
-        local showHitboxRow, showHitboxState = createFeatureRow("显示碰撞箱", true, showHitboxEnabled, toggleShowHitbox)
+        local showHitboxRow, showHitboxState = createAdvancedFeatureRow("📦 显示碰撞箱", true, showHitboxEnabled, toggleShowHitbox)
         showHitboxRow.Parent = ScriptsContainer
+        showHitboxEnabled = showHitboxState
+        totalHeight = totalHeight + 50
         
-        -- 添加小字说明
         local smallText = Instance.new("TextLabel")
         smallText.Parent = showHitboxRow
         smallText.BackgroundTransparency = 1
-        smallText.Position = UDim2.new(0, 0, 0.7, 0)
-        smallText.Size = UDim2.new(1, 0, 0.3, 0)
-        smallText.Font = Enum.Font.Gotham
-        smallText.Text = "盲射专用"
-        smallText.TextColor3 = Color3.fromRGB(150, 150, 150)
-        smallText.TextSize = 10
+        smallText.Position = UDim2.new(0, 12, 0.6, 0)
+        smallText.Size = UDim2.new(1, -24, 0.4, 0)
+        smallText.Font = FontPresets.Monospace
+        smallText.Text = "🎯 盲射专用"
+        smallText.TextColor3 = Color3.fromRGB(180, 180, 200)
+        smallText.TextSize = 11
         smallText.TextXAlignment = Enum.TextXAlignment.Left
-        
-        showHitboxEnabled = showHitboxState
-        totalHeight = totalHeight + 50
     elseif category == "BlindFire" then
-        -- 盲射功能
-        local antiHitRow, antiHitState = createFeatureRow("防击打", true, antiHitEnabled, toggleAntiHit)
+        local antiHitRow, antiHitState = createAdvancedFeatureRow("🛡️ 防击打", true, antiHitEnabled, toggleAntiHit)
         antiHitRow.Parent = ScriptsContainer
         antiHitEnabled = antiHitState
         totalHeight = totalHeight + 50
         
-        local enemyHitboxRow, enemyHitboxState = createFeatureRow("透视", true, enemyHitboxEnabled, toggleEnemyHitbox)
+        local enemyHitboxRow, enemyHitboxState = createAdvancedFeatureRow("🔍 透视", true, enemyHitboxEnabled, toggleEnemyHitbox)
         enemyHitboxRow.Parent = ScriptsContainer
         enemyHitboxEnabled = enemyHitboxState
         totalHeight = totalHeight + 50
+    elseif category == "AOTU" then
+        local autoCollectRow, autoCollectState = createAdvancedFeatureRow("⚽ 自动拾取裁判球", true, autoCollectBallEnabled, toggleAutoCollectBall)
+        autoCollectRow.Parent = ScriptsContainer
+        autoCollectBallEnabled = autoCollectState
+        totalHeight = totalHeight + 50
+        
+        local aotuText = createAdvancedColorTextLabel("🎮 <font color='#FF9800'>凹凸世界专用功能</font>\n\n<font color='#B39DDB'>自动拾取裁判球会自动收集比赛中的裁判球</font>", 80)
+        aotuText.Parent = ScriptsContainer
+        totalHeight = totalHeight + 90
+    elseif category == "Boxing" then
+        local autoPunchRow, autoPunchState = createAdvancedFeatureRow("🥊 自动挥拳", true, autoPunchEnabled, toggleAutoPunch)
+        autoPunchRow.Parent = ScriptsContainer
+        autoPunchEnabled = autoPunchState
+        totalHeight = totalHeight + 50
+        
+        local boxingText = createAdvancedColorTextLabel("🥊 <font color='#FF9800'>最强拳击模拟器专用</font>\n\n<font color='#B39DDB'>自动挥拳功能会自动进行攻击</font>", 80)
+        boxingText.Parent = ScriptsContainer
+        totalHeight = totalHeight + 90
     end
     
-    -- 更新CanvasSize
     ScriptsContainer.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
     
-    -- 更新导航按钮状态
     local buttons = {
         ScriptInfoButton = "ScriptInfo",
         DeveloperButton = "Developer",
         GeneralButton = "General",
         FEButton = "FE",
         ESPButton = "ESP",
-        BlindFireButton = "BlindFire"
+        BlindFireButton = "BlindFire",
+        AOTUButton = "AOTU",
+        BoxingButton = "Boxing"
     }
     
     for buttonName, buttonCategory in pairs(buttons) do
@@ -670,8 +1477,10 @@ local function loadCategory(category)
         if button then
             if buttonCategory == category then
                 button.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+                button.BackgroundTransparency = 0
             else
-                button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                button.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+                button.BackgroundTransparency = 0
             end
         end
     end
@@ -708,10 +1517,20 @@ BlindFireButton.MouseButton1Click:Connect(function()
     loadCategory("BlindFire")
 end)
 
+AOTUButton.MouseButton1Click:Connect(function()
+    currentCategory = "AOTU"
+    loadCategory("AOTU")
+end)
+
+BoxingButton.MouseButton1Click:Connect(function()
+    currentCategory = "Boxing"
+    loadCategory("Boxing")
+end)
+
 -- 创建最小化面板
 MinimizedPanel.Name = "MinimizedPanel"
 MinimizedPanel.Parent = ScreenGui
-MinimizedPanel.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+MinimizedPanel.BackgroundColor3 = ColorPalette.Primary
 MinimizedPanel.Size = panelSize
 MinimizedPanel.Position = UDim2.new(0.9, -250, 0.05, 0)
 MinimizedPanel.Active = false
@@ -720,7 +1539,12 @@ MinimizedPanel.Visible = false
 
 -- 面板圆角
 PanelUICorner.Parent = MinimizedPanel
-PanelUICorner.CornerRadius = UDim.new(0, 8)
+PanelUICorner.CornerRadius = UDim.new(0, 12)
+
+-- 面板渐变
+PanelGradient.Name = "PanelGradient"
+PanelGradient.Parent = MinimizedPanel
+PanelGradient.Color = GradientPresets.PurplePink
 
 -- 面板彩虹轮廓
 PanelUIStroke.Parent = MinimizedPanel
@@ -735,8 +1559,8 @@ spawn(function()
         for i = 1, #colorSequence.Keypoints do
             local nextIndex = i % #colorSequence.Keypoints + 1
             local tweenInfo = TweenInfo.new(
-                0.5,
-                Enum.EasingStyle.Linear,
+                0.6,
+                Enum.EasingStyle.Sine,
                 Enum.EasingDirection.InOut
             )
             local tween = game:GetService("TweenService"):Create(
@@ -754,12 +1578,11 @@ end)
 PanelTitle.Name = "PanelTitle"
 PanelTitle.Parent = MinimizedPanel
 PanelTitle.BackgroundTransparency = 1
-PanelTitle.Position = UDim2.new(0, 0, 0, 0)
 PanelTitle.Size = UDim2.new(1, 0, 1, 0)
-PanelTitle.Font = Enum.Font.GothamBold
-PanelTitle.Text = "NZ Script Center"
-PanelTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-PanelTitle.TextScaled = true
+PanelTitle.Font = FontPresets.Title
+PanelTitle.Text = "NZ SCRIPT CENTER"
+PanelTitle.TextColor3 = ColorPalette.Text
+PanelTitle.TextSize = 16
 PanelTitle.ZIndex = 2
 
 -- 面板标题描边
@@ -767,36 +1590,20 @@ PanelTitleStroke.Parent = PanelTitle
 PanelTitleStroke.Color = Color3.fromRGB(255, 0, 0)
 PanelTitleStroke.Thickness = 1.5
 PanelTitleStroke.LineJoinMode = Enum.LineJoinMode.Round
-PanelTitleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
--- 面板标题彩虹动画
-spawn(function()
-    while true do
-        for i = 1, #colorSequence.Keypoints do
-            local nextIndex = i % #colorSequence.Keypoints + 1
-            local tweenInfo = TweenInfo.new(
-                0.5,
-                Enum.EasingStyle.Linear,
-                Enum.EasingDirection.InOut
-            )
-            local tween = game:GetService("TweenService"):Create(
-                PanelTitleStroke,
-                tweenInfo,
-                {Color = colorSequence.Keypoints[nextIndex].Value}
-            )
-            tween:Play()
-            tween.Completed:Wait()
-        end
-    end
-end)
+PanelTitleStroke.Transparency = 0.3
 
 -- 创建球形展开按钮
 ExpandSphere.Name = "ExpandSphere"
 ExpandSphere.Parent = ScreenGui
-ExpandSphere.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
-ExpandSphere.Size = UDim2.new(0, 50, 0, 50)
-ExpandSphere.Position = UDim2.new(0.95, -25, 0.05, 0)
+ExpandSphere.BackgroundColor3 = ColorPalette.Primary
+ExpandSphere.Size = UDim2.new(0, 60, 0, 60)
+ExpandSphere.Position = UDim2.new(0.95, -30, 0.05, 0)
 ExpandSphere.Visible = false
+
+-- 球形渐变
+SphereGradient.Name = "SphereGradient"
+SphereGradient.Parent = ExpandSphere
+SphereGradient.Color = GradientPresets.BluePurple
 
 -- 球形圆角
 SphereCorner.Parent = ExpandSphere
@@ -804,8 +1611,8 @@ SphereCorner.CornerRadius = UDim.new(1, 0)
 
 -- 球形彩虹描边
 SphereStroke.Parent = ExpandSphere
-SphereStroke.Color = Color3.fromRGB(255, 0, 0)
-SphereStroke.Thickness = 2.5
+SphereStroke.Color = Color3.fromRGB(0, 200, 255)
+SphereStroke.Thickness = 3
 SphereStroke.LineJoinMode = Enum.LineJoinMode.Round
 
 -- 球形彩虹动画
@@ -814,8 +1621,8 @@ spawn(function()
         for i = 1, #colorSequence.Keypoints do
             local nextIndex = i % #colorSequence.Keypoints + 1
             local tweenInfo = TweenInfo.new(
-                0.5,
-                Enum.EasingStyle.Linear,
+                0.6,
+                Enum.EasingStyle.Sine,
                 Enum.EasingDirection.InOut
             )
             local tween = game:GetService("TweenService"):Create(
@@ -832,14 +1639,19 @@ end)
 -- 球形按钮
 SphereButton.Name = "SphereButton"
 SphereButton.Parent = ExpandSphere
-SphereButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-SphereButton.BackgroundTransparency = 1
+SphereButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+SphereButton.BackgroundTransparency = 0.2
 SphereButton.Size = UDim2.new(1, 0, 1, 0)
-SphereButton.Font = Enum.Font.GothamBold
+SphereButton.Font = FontPresets.Header
 SphereButton.Text = ""
-SphereButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SphereButton.TextColor3 = ColorPalette.Text
 SphereButton.TextSize = 20
 SphereButton.ZIndex = 2
+
+-- 球形按钮渐变
+SphereButtonGradient.Name = "SphereButtonGradient"
+SphereButtonGradient.Parent = SphereButton
+SphereButtonGradient.Color = GradientPresets.DarkTheme
 
 -- 球形按钮圆角
 local SphereButtonCorner = Instance.new("UICorner")
@@ -851,17 +1663,20 @@ SphereText.Name = "SphereText"
 SphereText.Parent = ExpandSphere
 SphereText.BackgroundTransparency = 1
 SphereText.Size = UDim2.new(1, 0, 1, 0)
-SphereText.Font = Enum.Font.GothamBold
+SphereText.Font = FontPresets.Title
 SphereText.Text = "NZ"
-SphereText.TextColor3 = Color3.fromRGB(255, 255, 255)
-SphereText.TextScaled = true
+SphereText.TextColor3 = ColorPalette.Text
+SphereText.TextSize = 22
+SphereText.TextStrokeTransparency = 0.7
+SphereText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 SphereText.ZIndex = 3
 
 -- 球形文字描边
 SphereTextStroke.Parent = SphereText
 SphereTextStroke.Color = Color3.fromRGB(0, 255, 255)
-SphereTextStroke.Thickness = 1.5
+SphereTextStroke.Thickness = 1.8
 SphereTextStroke.LineJoinMode = Enum.LineJoinMode.Round
+SphereTextStroke.Transparency = 0.2
 
 -- 球形文字彩虹动画
 spawn(function()
@@ -869,8 +1684,8 @@ spawn(function()
         for i = 1, #colorSequence.Keypoints do
             local nextIndex = i % #colorSequence.Keypoints + 1
             local tweenInfo = TweenInfo.new(
-                0.5,
-                Enum.EasingStyle.Linear,
+                0.6,
+                Enum.EasingStyle.Sine,
                 Enum.EasingDirection.InOut
             )
             local tween = game:GetService("TweenService"):Create(
@@ -889,8 +1704,7 @@ local function minimizeUI()
     isMinimized = true
     MinimizeButton.Text = "+"
     
-    -- 创建缩小动画
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In)
     local sizeTween = game:GetService("TweenService"):Create(
         Frame,
         tweenInfo,
@@ -904,8 +1718,7 @@ local function minimizeUI()
     MinimizedPanel.Visible = false
     ExpandSphere.Visible = true
     
-    -- 设置球形按钮位置
-    ExpandSphere.Position = UDim2.new(0.95, -25, 0.05, 0)
+    ExpandSphere.Position = UDim2.new(0.95, -30, 0.05, 0)
 end
 
 local function expandUI()
@@ -915,12 +1728,10 @@ local function expandUI()
     ExpandSphere.Visible = false
     Frame.Visible = true
     
-    -- 设置Frame到屏幕中心
     Frame.Position = originalPosition
     Frame.Size = UDim2.new(0, 0, 0, 0)
     
-    -- 创建展开动画
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     local sizeTween = game:GetService("TweenService"):Create(
         Frame,
         tweenInfo,
@@ -929,7 +1740,6 @@ local function expandUI()
     
     sizeTween:Play()
     
-    -- 重新加载当前类型的脚本
     loadCategory(currentCategory)
 end
 
@@ -942,6 +1752,28 @@ MinimizeButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- 关闭按钮点击事件
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- 关闭按钮悬停效果
+CloseButton.MouseEnter:Connect(function()
+    game:GetService("TweenService"):Create(
+        CloseButton,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {BackgroundColor3 = Color3.fromRGB(220, 80, 80)}
+    ):Play()
+end)
+
+CloseButton.MouseLeave:Connect(function()
+    game:GetService("TweenService"):Create(
+        CloseButton,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {BackgroundColor3 = Color3.fromRGB(200, 60, 60)}
+    ):Play()
+end)
+
 -- 球形按钮长按检测
 local longPressTimer = 0
 local isLongPressing = false
@@ -951,15 +1783,13 @@ SphereButton.MouseButton1Down:Connect(function()
     isLongPressing = true
     longPressTimer = tick()
     
-    -- 显示长按提示
-    local originalText = SphereText.Text
-    SphereText.Text = "按住..."
+    SphereText.Text = "⏳"
     
     spawn(function()
         while isLongPressing do
             local elapsedTime = tick() - longPressTimer
             if elapsedTime >= longPressThreshold then
-                SphereText.Text = "执行代码"
+                SphereText.Text = "⚡"
                 break
             end
             wait(0.1)
@@ -972,16 +1802,14 @@ SphereButton.MouseButton1Up:Connect(function()
     
     if isLongPressing then
         if elapsedTime < longPressThreshold then
-            -- 短按：展开UI
             if isMinimized then
                 expandUI()
             end
         else
-            -- 长按：执行代码
             if ScreenGui.Parent ~= game.CoreGui then
                 ScreenGui.Parent = game.CoreGui
             end
-            SphereText.Text = "代码已执行"
+            SphereText.Text = "✅"
             wait(0.5)
         end
         
@@ -996,6 +1824,7 @@ Title.ZIndex = 3
 VersionLabel.ZIndex = 3
 Author.ZIndex = 3
 MinimizeButton.ZIndex = 3
+CloseButton.ZIndex = 3
 
 NavigationFrame.ZIndex = 2
 ScriptInfoButton.ZIndex = 3
@@ -1004,6 +1833,8 @@ GeneralButton.ZIndex = 3
 FEButton.ZIndex = 3
 ESPButton.ZIndex = 3
 BlindFireButton.ZIndex = 3
+AOTUButton.ZIndex = 3
+BoxingButton.ZIndex = 3
 
 ScriptsContainer.ZIndex = 2
 
@@ -1024,7 +1855,9 @@ if ScreenGui.Parent ~= game.CoreGui then
     ScreenGui.Parent = game.CoreGui
 end
 
-print("NZ Script Center V1.0 已加载")
-print("作者: 南烛")
-print("当前版本: V1.0")
-print("QQ交流群: 445825485")
+print("╔══════════════════════════════════════════╗")
+print("║       NZ SCRIPT CENTER V2.0              ║")
+print("║        高级界面版已加载                  ║")
+print("║        作者: 南烛                        ║")
+print("║        QQ交流群: 445825485               ║")
+print("╚══════════════════════════════════════════╝")
