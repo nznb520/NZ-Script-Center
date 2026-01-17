@@ -1255,7 +1255,7 @@ end
 -- 显示碰撞箱功能
 local function toggleShowHitbox(state)
     showHitboxEnabled = state
-    print("显示碰撞箱: " .. (state and "开启" or "关闭"))
+    print("显示碰撞箱: " .. (state and "开启"或"关闭"))
 end
 
 -- 防击打功能
@@ -1396,6 +1396,7 @@ local function loadCategory(category)
         mapWallhackRow.Parent = ScriptsContainer
         totalHeight = totalHeight + 50
         
+        -- 这里添加没有开关的飞行功能
         local flightRow = createAdvancedFeatureRow("🚀 飞行", false, false, executeFlightScript)
         flightRow.Parent = ScriptsContainer
         totalHeight = totalHeight + 50
@@ -1632,6 +1633,7 @@ spawn(function()
             )
             tween:Play()
             tween.Completed:Wait()
+            end
         end
     end
 end)
