@@ -35,6 +35,8 @@ local AOTUButton = Instance.new("TextButton")
 local AOTUButtonGradient = Instance.new("UIGradient")
 local BoxingButton = Instance.new("TextButton")
 local BoxingButtonGradient = Instance.new("UIGradient")
+local ServerButton = Instance.new("TextButton")
+local ServerButtonGradient = Instance.new("UIGradient")
 
 -- 脚本容器相关
 local ScriptsContainer = Instance.new("ScrollingFrame")
@@ -64,7 +66,7 @@ local SphereTextStroke = Instance.new("UIStroke")
 
 -- 状态变量
 local isMinimized = false
-local originalSize = UDim2.new(0, 420, 0, 400)
+local originalSize = UDim2.new(0, 420, 0, 420) -- 高度增加以适应更多按钮
 local originalPosition = UDim2.new(0.4, 0, 0.35, 0)
 local panelSize = UDim2.new(0, 250, 0, 60)
 local currentCategory = "ScriptInfo"
@@ -81,10 +83,21 @@ local antiHitEnabled = false
 local enemyHitboxEnabled = false
 local autoCollectBallEnabled = false
 local autoPunchEnabled = false
+local serverDetectionEnabled = false
 
 -- 脚本线程
 local autoCollectThread = nil
 local autoPunchThread = nil
+local serverDetectionThread = nil
+
+-- 支持的服务器列表
+local SupportedServers = {
+    ["鱼"] = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/nznb520/NZ-Script-Center/8755071529aff5733229cf513d24d5fa4e4fb7c8/feizi1"))()
+    end,
+    -- 可以在这里添加更多服务器
+    -- ["服务器名称"] = function() 执行脚本 end
+}
 
 -- 高级颜色配置
 local ColorPalette = {
@@ -95,7 +108,8 @@ local ColorPalette = {
     Subtext = Color3.fromRGB(220, 220, 230), -- 更亮的副文字
     Success = Color3.fromRGB(76, 175, 80),
     Danger = Color3.fromRGB(244, 67, 54),
-    Warning = Color3.fromRGB(255, 193, 7)
+    Warning = Color3.fromRGB(255, 193, 7),
+    Server = Color3.fromRGB(147, 112, 219) -- 服务器功能专用颜色
 }
 
 -- 高级渐变配置
@@ -119,6 +133,10 @@ local GradientPresets = {
     DarkTheme = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 40)),
         ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 60))
+    }),
+    ServerTheme = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(186, 85, 211))
     })
 }
 
@@ -318,7 +336,7 @@ NavigationFrame.Name = "NavigationFrame"
 NavigationFrame.Parent = Frame
 NavigationFrame.BackgroundColor3 = ColorPalette.Secondary
 NavigationFrame.Position = UDim2.new(0, 15, 0, 80)
-NavigationFrame.Size = UDim2.new(0, 90, 0, 310) -- 高度增加以适应更多按钮
+NavigationFrame.Size = UDim2.new(0, 90, 0, 330) -- 高度增加以适应更多按钮
 
 -- 导航栏圆角
 NavigationCorner.Parent = NavigationFrame
@@ -336,13 +354,13 @@ NavigationStroke.Thickness = 2
 NavigationStroke.LineJoinMode = Enum.LineJoinMode.Round
 
 -- 创建高级导航按钮函数
-local function createAdvancedNavButton(name, text, positionY)
+local function createAdvancedNavButton(name, text, positionY, isServer)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Parent = NavigationFrame
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+    button.BackgroundColor3 = isServer and Color3.fromRGB(60, 50, 85) or Color3.fromRGB(50, 50, 65)
     button.Position = UDim2.new(0.1, 0, positionY, 0)
-    button.Size = UDim2.new(0.8, 0, 0, 32) -- 稍微减小高度以适应更多按钮
+    button.Size = UDim2.new(0.8, 0, 0, 32)
     button.Font = FontPresets.Body
     button.Text = text
     button.TextColor3 = ColorPalette.Text
@@ -353,7 +371,7 @@ local function createAdvancedNavButton(name, text, positionY)
     local gradient = Instance.new("UIGradient")
     gradient.Name = name .. "Gradient"
     gradient.Parent = button
-    gradient.Color = GradientPresets.DarkTheme
+    gradient.Color = isServer and GradientPresets.ServerTheme or GradientPresets.DarkTheme
     
     local corner = Instance.new("UICorner")
     corner.Parent = button
@@ -369,7 +387,7 @@ local function createAdvancedNavButton(name, text, positionY)
         game:GetService("TweenService"):Create(
             button,
             TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundColor3 = Color3.fromRGB(70, 70, 90)}
+            {BackgroundColor3 = isServer and Color3.fromRGB(80, 70, 105) or Color3.fromRGB(70, 70, 90)}
         ):Play()
     end)
     
@@ -377,7 +395,7 @@ local function createAdvancedNavButton(name, text, positionY)
         game:GetService("TweenService"):Create(
             button,
             TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundColor3 = Color3.fromRGB(50, 50, 65)}
+            {BackgroundColor3 = isServer and Color3.fromRGB(60, 50, 85) or Color3.fromRGB(50, 50, 65)}
         ):Play()
     end)
     
@@ -385,21 +403,22 @@ local function createAdvancedNavButton(name, text, positionY)
 end
 
 -- 创建导航按钮
-ScriptInfoButton, ScriptInfoButtonGradient = createAdvancedNavButton("ScriptInfoButton", "📜 脚本信息", 0.02)
-DeveloperButton, DeveloperButtonGradient = createAdvancedNavButton("DeveloperButton", "👨‍💻 开发人员", 0.13)
-GeneralButton, GeneralButtonGradient = createAdvancedNavButton("GeneralButton", "⚙️ 通用", 0.24)
-FEButton, FEButtonGradient = createAdvancedNavButton("FEButton", "🎮 FE", 0.35)
-ESPButton, ESPButtonGradient = createAdvancedNavButton("ESPButton", "👁️ ESP", 0.46)
-BlindFireButton, BlindFireButtonGradient = createAdvancedNavButton("BlindFireButton", "🎯 盲射", 0.57)
-AOTUButton, AOTUButtonGradient = createAdvancedNavButton("AOTUButton", "🎮 凹凸世界", 0.68)
-BoxingButton, BoxingButtonGradient = createAdvancedNavButton("BoxingButton", "🥊 拳击模拟器", 0.79)
+ScriptInfoButton, ScriptInfoButtonGradient = createAdvancedNavButton("ScriptInfoButton", "📜 脚本信息", 0.02, false)
+DeveloperButton, DeveloperButtonGradient = createAdvancedNavButton("DeveloperButton", "👨‍💻 开发人员", 0.12, false)
+GeneralButton, GeneralButtonGradient = createAdvancedNavButton("GeneralButton", "⚙️ 通用", 0.22, false)
+FEButton, FEButtonGradient = createAdvancedNavButton("FEButton", "🎮 FE", 0.32, false)
+ESPButton, ESPButtonGradient = createAdvancedNavButton("ESPButton", "👁️ ESP", 0.42, false)
+BlindFireButton, BlindFireButtonGradient = createAdvancedNavButton("BlindFireButton", "🎯 盲射", 0.52, false)
+AOTUButton, AOTUButtonGradient = createAdvancedNavButton("AOTUButton", "🎮 凹凸世界", 0.62, false)
+BoxingButton, BoxingButtonGradient = createAdvancedNavButton("BoxingButton", "🥊 拳击模拟器", 0.72, false)
+ServerButton, ServerButtonGradient = createAdvancedNavButton("ServerButton", "🌐 服务器", 0.82, true)
 
 -- 创建右侧脚本容器
 ScriptsContainer.Name = "ScriptsContainer"
 ScriptsContainer.Parent = Frame
 ScriptsContainer.BackgroundColor3 = ColorPalette.Secondary
 ScriptsContainer.Position = UDim2.new(0, 115, 0, 80)
-ScriptsContainer.Size = UDim2.new(0, 285, 0, 310) -- 高度增加
+ScriptsContainer.Size = UDim2.new(0, 285, 0, 330) -- 高度增加
 ScriptsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScriptsContainer.ScrollBarThickness = 10
 ScriptsContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
@@ -1255,7 +1274,7 @@ end
 -- 显示碰撞箱功能
 local function toggleShowHitbox(state)
     showHitboxEnabled = state
-    print("显示碰撞箱: " .. (state and "开启"或"关闭"))
+    print("显示碰撞箱: " .. (state and "开启" or "关闭"))
 end
 
 -- 防击打功能
@@ -1358,6 +1377,84 @@ local function toggleAutoPunch(state)
     end
 end
 
+-- 服务器检测功能
+local function toggleServerDetection(state)
+    serverDetectionEnabled = state
+    if state then
+        if serverDetectionThread then
+            serverDetectionThread:Disconnect()
+            serverDetectionThread = nil
+        end
+        
+        serverDetectionThread = game:GetService("RunService").Heartbeat:Connect(function()
+            -- 获取游戏名称或ID
+            local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+            local placeId = game.PlaceId
+            
+            -- 检查是否支持当前服务器
+            for serverName, scriptFunction in pairs(SupportedServers) do
+                -- 简单的字符串匹配，可以根据需要修改匹配逻辑
+                if string.find(gameName:lower(), serverName:lower()) then
+                    -- 显示通知
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "服务器检测",
+                        Text = "检测到服务器: " .. serverName .. "\n正在执行对应脚本...",
+                        Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150",
+                        Duration = 5
+                    })
+                    
+                    -- 执行对应脚本
+                    pcall(scriptFunction)
+                    
+                    -- 停止检测
+                    if serverDetectionThread then
+                        serverDetectionThread:Disconnect()
+                        serverDetectionThread = nil
+                    end
+                    break
+                end
+            end
+        end)
+    else
+        if serverDetectionThread then
+            serverDetectionThread:Disconnect()
+            serverDetectionThread = nil
+        end
+    end
+end
+
+-- 手动检查当前服务器
+local function checkCurrentServer()
+    local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+    local placeId = game.PlaceId
+    
+    -- 检查是否支持当前服务器
+    for serverName, scriptFunction in pairs(SupportedServers) do
+        if string.find(gameName:lower(), serverName:lower()) then
+            -- 显示通知
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "服务器检测",
+                Text = "检测到服务器: " .. serverName .. "\n正在执行对应脚本...",
+                Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150",
+                Duration = 5
+            })
+            
+            -- 执行对应脚本
+            pcall(scriptFunction)
+            return true
+        end
+    end
+    
+    -- 没有找到支持的服务器
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "服务器检测",
+        Text = "当前服务器不支持自动执行脚本\n服务器名称: " .. gameName,
+        Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150",
+        Duration = 5
+    })
+    return false
+end
+
 -- 加载指定类型的脚本
 local function loadCategory(category)
     for _, child in ipairs(ScriptsContainer:GetChildren()) do
@@ -1396,7 +1493,6 @@ local function loadCategory(category)
         mapWallhackRow.Parent = ScriptsContainer
         totalHeight = totalHeight + 50
         
-        -- 这里添加没有开关的飞行功能
         local flightRow = createAdvancedFeatureRow("🚀 飞行", false, false, executeFlightScript)
         flightRow.Parent = ScriptsContainer
         totalHeight = totalHeight + 50
@@ -1458,6 +1554,29 @@ local function loadCategory(category)
         local boxingText = createAdvancedColorTextLabel("🥊 <font color='#FF9800'>最强拳击模拟器专用</font>\n\n<font color='#B39DDB'>自动挥拳功能会自动进行攻击</font>", 80)
         boxingText.Parent = ScriptsContainer
         totalHeight = totalHeight + 90
+    elseif category == "Server" then
+        local serverDetectionRow, serverDetectionState = createAdvancedFeatureRow("🌐 自动检测服务器", true, serverDetectionEnabled, toggleServerDetection)
+        serverDetectionRow.Parent = ScriptsContainer
+        serverDetectionEnabled = serverDetectionState
+        totalHeight = totalHeight + 50
+        
+        local checkServerRow = createAdvancedFeatureRow("🔍 检查当前服务器", false, false, checkCurrentServer)
+        checkServerRow.Parent = ScriptsContainer
+        totalHeight = totalHeight + 50
+        
+        -- 显示支持的服务器列表
+        local supportedServersText = "📋 <font color='#9370DB'>当前支持的服务器列表:</font>\n\n"
+        local serverCount = 0
+        for serverName, _ in pairs(SupportedServers) do
+            serverCount = serverCount + 1
+            supportedServersText = supportedServersText .. "<font color='#FFD740'>" .. serverCount .. ". " .. serverName .. "</font>\n"
+        end
+        
+        supportedServersText = supportedServersText .. "\n<font color='#4FC3F7'>💡 提示: 开启自动检测后，进入支持的游戏时会自动执行对应脚本</font>"
+        
+        local serversText = createAdvancedColorTextLabel(supportedServersText, 150)
+        serversText.Parent = ScriptsContainer
+        totalHeight = totalHeight + 160
     end
     
     ScriptsContainer.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
@@ -1470,7 +1589,8 @@ local function loadCategory(category)
         ESPButton = "ESP",
         BlindFireButton = "BlindFire",
         AOTUButton = "AOTU",
-        BoxingButton = "Boxing"
+        BoxingButton = "Boxing",
+        ServerButton = "Server"
     }
     
     for buttonName, buttonCategory in pairs(buttons) do
@@ -1526,6 +1646,11 @@ end)
 BoxingButton.MouseButton1Click:Connect(function()
     currentCategory = "Boxing"
     loadCategory("Boxing")
+end)
+
+ServerButton.MouseButton1Click:Connect(function()
+    currentCategory = "Server"
+    loadCategory("Server")
 end)
 
 -- 创建最小化面板
@@ -1633,7 +1758,6 @@ spawn(function()
             )
             tween:Play()
             tween.Completed:Wait()
-            end
         end
     end
 end)
@@ -1837,6 +1961,7 @@ ESPButton.ZIndex = 3
 BlindFireButton.ZIndex = 3
 AOTUButton.ZIndex = 3
 BoxingButton.ZIndex = 3
+ServerButton.ZIndex = 3
 
 ScriptsContainer.ZIndex = 2
 
